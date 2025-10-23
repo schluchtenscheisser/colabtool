@@ -21,11 +21,13 @@ __all__ = [
 # ENV parsing (robust gegen Kommentare)
 # ----------------------------
 def _env_str(name: str, default: str = "") -> str:
-    val = os.getenv(name, default)
+    val = os.getenv(name, None)
     if val is None:
         return default
-    # nur ersten Token nehmen, Kommentare abschneiden
-    return str(val).strip().split()[0]
+    s = str(val).strip().strip('"').strip("'")
+    if not s:
+        return default
+    return s.split(maxsplit=1)[0]
 
 def _env_bool(name: str, default: bool = False) -> bool:
     raw = _env_str(name, "1" if default else "0").lower()
