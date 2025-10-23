@@ -5,9 +5,10 @@ import os
 import json
 import time
 from typing import Dict, List, Optional, Union
+from pathlib import Path
 
 import requests
-from .utils import pd, np, logging
+from .utils import pd, np, logging, CACHE_DIR as _UTILS_CACHE_DIR
 
 __all__ = [
     "cg_markets",
@@ -47,6 +48,13 @@ def _env_float(name: str, default: float) -> float:
     except Exception:
         return default
 
+def _is_colab() -> bool:
+    try:
+        import google.colab  # noqa: F401
+        return True
+    except Exception:
+        return False
+
 # ----------------------------
 # ENV & Defaults
 # ----------------------------
@@ -65,17 +73,34 @@ _CG_MIN_INTERVAL_S = _env_float("CG_MIN_INTERVAL_S", 1.5)
 
 _CG_CATS_TIME_BUDGET_S = _env_float("CG_CATS_TIME_BUDGET_S", 300.0)
 
-# cache dirs
-_BASE_DIR = "/content/drive/MyDrive/crypto_tool"
-_CACHE_DIR = os.path.join(_BASE_DIR, "cache")
-_SEED_DIR = os.path.join(_BASE_DIR, "seeds")
-os.makedirs(_CACHE_DIR, exist_ok=True)
-os.makedirs(_SEED_DIR, exist_ok=True)
+# ----------------------------
+# Pfade/Cache/Seeds (CI-sicher, kein erzwungenes /content)
+# ----------------------------
+_CACHE_DIR: Path = Path(os.getenv("CACHE_DIR", str(_UTILS_CACHE_DIR)))
 
-_SEEN_PATH = os.path.join(_CACHE_DIR, "seen_ids.json")
-_TVL_SEED = os.path.join(_SEED_DIR, "seed_tvl_map.csv")
+def _resolve_seed_dir() -> Path:
+    env = os.getenv("SEED_DIR")
+    if env:
+        return Path(env)
+    if _is_colab():
+        return Path("/content/drive/MyDrive/crypto_tool/seeds")
+    return Path.cwd() / "seeds"
 
-# sessions
+_SEED_DIR: Path = _resolve_seed_dir()
+
+# Verzeichnisse best-effort anlegen
+for _p in (_CACHE_DIR, _SEED_DIR):
+    try:
+        _p.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        pass
+
+_SEEN_PATH: Path = _CACHE_DIR / "seen_ids.json"
+_TVL_SEED: Path = _SEED_DIR / "seed_tvl_map.csv"
+
+# ----------------------------
+# Sessions
+# ----------------------------
 _session_pro = requests.Session()
 _session_pro.headers.update({
     "Accept": "application/json",
@@ -228,7 +253,7 @@ def map_tvl(df: pd.DataFrame) -> pd.DataFrame:
     """Seed-basierte TVL-Mappung (seed_tvl_map.csv: id, tvl_usd, llama_slug)."""
     d = df.copy()
     d["tvl_usd"] = np.nan
-    if os.path.isfile(_TVL_SEED):
+    if _TVL_SEED.is_file():
         try:
             sm = pd.read_csv(_TVL_SEED)
             sm["id"] = sm["id"].astype(str)
@@ -246,7 +271,7 @@ def update_seen_ids(ids: List[str]) -> Dict[str, int]:
     """Persistente Liste gesehener CoinGecko-IDs zur Erkennung von New-Listings."""
     ids = [str(x) for x in (ids or [])]
     try:
-        seen = json.load(open(_SEEN_PATH, "r")) if os.path.isfile(_SEEN_PATH) else []
+        seen = json.load(_SEEN_PATH.open("r")) if _SEEN_PATH.is_file() else []
     except Exception:
         seen = []
     sset = set(seen)
@@ -256,7 +281,7 @@ def update_seen_ids(ids: List[str]) -> Dict[str, int]:
             sset.add(cid)
             new += 1
     try:
-        json.dump(sorted(list(sset)), open(_SEEN_PATH, "w"))
+        json.dump(sorted(list(sset)), _SEEN_PATH.open("w"))
     except Exception:
         pass
     return {"total_seen": len(sset), "added": new}
@@ -264,9 +289,14 @@ def update_seen_ids(ids: List[str]) -> Dict[str, int]:
 # ----------------------------
 # Charts für Backtest
 # ----------------------------
-def _chart_cache_path(coin_id: str, vs: str, days: int, interval: str) -> str:
+def _chart_cache_path(coin_id: str, vs: str, days: int, interval: str) -> Path:
     fn = f"cg_chart_{coin_id}_{vs}_{days}_{interval}.json".replace("/", "_")
-    return os.path.join(_CACHE_DIR, fn)
+    p = _CACHE_DIR / fn
+    try:
+        p.parent.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        pass
+    return p
 
 def cg_market_chart(coin_id: str, vs: str = "usd", days: int = 60, interval: str = "daily", ttl_s: int = 6*3600) -> Optional[dict]:
     """
@@ -281,8 +311,8 @@ def cg_market_chart(coin_id: str, vs: str = "usd", days: int = 60, interval: str
 
     cpath = _chart_cache_path(coin_id, vs, days, interval)
     try:
-        if os.path.isfile(cpath) and (time.time() - os.path.getmtime(cpath) < ttl_s):
-            return json.load(open(cpath, "r"))
+        if cpath.is_file() and (time.time() - cpath.stat().st_mtime < ttl_s):
+            return json.load(cpath.open("r"))
     except Exception:
         pass
 
@@ -294,9 +324,8 @@ def cg_market_chart(coin_id: str, vs: str = "usd", days: int = 60, interval: str
             j = _one_get(_session_pro, _PRO_BASE, f"/coins/{coin_id}/market_chart", p2, max(1, _CG_MAX_ATTEMPTS))
     if isinstance(j, dict) and ("prices" in j or "market_caps" in j or "total_volumes" in j):
         try:
-            json.dump(j, open(cpath, "w"))
+            json.dump(j, cpath.open("w"))
         except Exception:
             pass
         return j
     return {"prices": []}
-
