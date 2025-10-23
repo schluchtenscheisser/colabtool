@@ -3,26 +3,49 @@ from __future__ import annotations
 import os
 import time
 from typing import Dict, List, Optional, Tuple
+from pathlib import Path
 
 import requests
 from .utils import pd, np, logging
 
 # -------------------------
-# Konstanten und Pfade
+# Konstanten und Endpunkte
 # -------------------------
 _MEXC_BASE = "https://api.mexc.com"
 _MEXC_EXCHANGE_INFO = f"{_MEXC_BASE}/api/v3/exchangeInfo"
 _MEXC_TICKER_24H = f"{_MEXC_BASE}/api/v3/ticker/24hr"
-
-SEED_DIR = "/content/drive/MyDrive/crypto_tool/seeds"
-os.makedirs(SEED_DIR, exist_ok=True)
-SEED_FILE = os.path.join(SEED_DIR, "seed_mexc_map.csv")  # Columns: symbol, prefer_pair, bad_pairs, confidence
 
 # Bevorzugte Spot-Quotes
 _PREFERRED_QUOTES = ["USDT", "USDC", "USD"]
 # simple Hebel-/ETF-Heuristik
 _LEVERAGE_SUFFIXES = ("UP", "DOWN", "3L", "3S", "4L", "4S", "5L", "5S", "BULL", "BEAR", "ETF")
 
+# -------------------------
+# Pfade (CI-/Colab-sicher)
+# -------------------------
+def _is_colab() -> bool:
+    try:
+        import google.colab  # noqa: F401
+        return True
+    except Exception:
+        return False
+
+def _resolve_seed_dir() -> Path:
+    env = os.getenv("SEED_DIR")
+    if env:
+        return Path(env)
+    if _is_colab():
+        return Path("/content/drive/MyDrive/crypto_tool/seeds")
+    return Path.cwd() / "seeds"
+
+SEED_DIR: Path = _resolve_seed_dir()
+try:
+    SEED_DIR.mkdir(parents=True, exist_ok=True)
+except Exception:
+    # In CI oder schreibgeschützten Umgebungen still ignorieren
+    pass
+
+SEED_FILE: Path = SEED_DIR / "seed_mexc_map.csv"  # Columns: symbol, prefer_pair, bad_pairs, confidence
 
 # -------------------------
 # Helpers
@@ -31,7 +54,6 @@ def _is_leveraged_symbol(base: str, full_symbol: str) -> bool:
     b = str(base or "").upper()
     s = str(full_symbol or "").upper()
     return any(b.endswith(suf) or s.endswith(suf) for suf in _LEVERAGE_SUFFIXES)
-
 
 def _http_json(url: str, params: Optional[dict] = None, tries: int = 3, timeout: int = 20):
     last_err = None
@@ -46,7 +68,6 @@ def _http_json(url: str, params: Optional[dict] = None, tries: int = 3, timeout:
         time.sleep(min(5 * (i + 1), 10))
     logging.warning(f"[mexc] GET fail {url} | last={last_err}")
     return None
-
 
 # -------------------------
 # Listing-Beschaffung
@@ -74,7 +95,6 @@ def _listing_from_exchange_info() -> pd.DataFrame:
                 continue
     return pd.DataFrame(rows, columns=["base", "quote", "symbol"]).drop_duplicates()
 
-
 def _listing_from_ticker24() -> pd.DataFrame:
     """
     Fallback: /api/v3/ticker/24hr liefert nur 'symbol'.
@@ -89,6 +109,7 @@ def _listing_from_ticker24() -> pd.DataFrame:
                 if not sym:
                     continue
                 quote = None
+                base = ""
                 for q in _PREFERRED_QUOTES:
                     if sym.endswith(q):
                         quote = q
@@ -106,7 +127,6 @@ def _listing_from_ticker24() -> pd.DataFrame:
                 continue
     return pd.DataFrame(rows, columns=["base", "quote", "symbol"]).drop_duplicates()
 
-
 def _load_mexc_listing() -> pd.DataFrame:
     df = _listing_from_exchange_info()
     if df.empty:
@@ -116,12 +136,11 @@ def _load_mexc_listing() -> pd.DataFrame:
         logging.error("[mexc] kein Spot-Listing (exchangeInfo und ticker/24hr leer)")
     return df
 
-
 # -------------------------
 # Seed-Overrides
 # -------------------------
 def _load_seed_overrides() -> pd.DataFrame:
-    if os.path.isfile(SEED_FILE):
+    if SEED_FILE.is_file():
         try:
             df = pd.read_csv(SEED_FILE)
             for col in ["symbol", "prefer_pair", "bad_pairs", "confidence"]:
@@ -133,7 +152,6 @@ def _load_seed_overrides() -> pd.DataFrame:
         except Exception as ex:
             logging.warning(f"[mexc] Seed lesen fehlgeschlagen: {ex}")
     return pd.DataFrame(columns=["symbol", "prefer_pair", "bad_pairs", "confidence"])
-
 
 def _apply_overrides(df_pairs: pd.DataFrame, seed: pd.DataFrame) -> pd.DataFrame:
     if seed.empty:
@@ -147,7 +165,6 @@ def _apply_overrides(df_pairs: pd.DataFrame, seed: pd.DataFrame) -> pd.DataFrame
     )
     return df_pairs
 
-
 def _choose_preferred_pair(rows: pd.DataFrame) -> str:
     # Quote-Priorität: USDT > USDC > USD
     for q in _PREFERRED_QUOTES:
@@ -156,7 +173,6 @@ def _choose_preferred_pair(rows: pd.DataFrame) -> str:
             return hit.iloc[0]["symbol"]
     return rows.iloc[0]["symbol"]
 
-
 def _collect_collisions_in_listing(listing: pd.DataFrame) -> Dict[str, int]:
     """Mehrere Paare für gleiche Base → Kollisionen"""
     vc = listing["base"].value_counts()
@@ -164,7 +180,6 @@ def _collect_collisions_in_listing(listing: pd.DataFrame) -> Dict[str, int]:
     if d:
         logging.info(f"[mexc] Base-Kollisionen (mehrere Paare pro Base): {len(d)}")
     return d
-
 
 # -------------------------
 # Öffentliche API
@@ -208,7 +223,6 @@ def apply_mexc_filter(df_in: pd.DataFrame, require_mexc: bool = True) -> pd.Data
 
     return df.drop(columns=["base_symbol"], errors="ignore")
 
-
 def export_mexc_seed_template(df: pd.DataFrame, collisions_only: bool = True) -> None:
     """
     Exportiert Seed-Template für Ticker-Kollisionen und Paar-Präferenzen.
@@ -239,4 +253,3 @@ def export_mexc_seed_template(df: pd.DataFrame, collisions_only: bool = True) ->
         logging.info(f"[mexc] Seed-Template exportiert: {SEED_FILE} ({len(out)} Zeilen)")
     except Exception as ex:
         logging.warning(f"[mexc] Seed-Export fehlgeschlagen: {ex}")
-
