@@ -7,6 +7,7 @@ import json
 import time
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime, timezone, timedelta
+from pathlib import Path
 
 import feedparser
 from .utils import pd, np, logging
@@ -14,12 +15,33 @@ from .utils import pd, np, logging
 __all__ = ["fetch_rss_all", "add_buzz_metrics_for_candidates"]
 
 # -------------------------------------------------
+# Pfade (CI-/Colab-sicher)
+# -------------------------------------------------
+def _is_colab() -> bool:
+    try:
+        import google.colab  # noqa: F401
+        return True
+    except Exception:
+        return False
+
+def _resolve_seed_dir() -> Path:
+    env = os.getenv("SEED_DIR")
+    if env:
+        return Path(env)
+    if _is_colab():
+        return Path("/content/drive/MyDrive/crypto_tool/seeds")
+    return Path.cwd() / "seeds"
+
+_SEED_DIR: Path = _resolve_seed_dir()
+try:
+    _SEED_DIR.mkdir(parents=True, exist_ok=True)
+except Exception:
+    # in CI ggf. kein Recht → still ignorieren
+    pass
+
+# -------------------------------------------------
 # ENV
 # -------------------------------------------------
-_BASE_DIR = "/content/drive/MyDrive/crypto_tool"
-_SEED_DIR = os.path.join(_BASE_DIR, "seeds")
-os.makedirs(_SEED_DIR, exist_ok=True)
-
 def _env_str(name: str, default: str = "") -> str:
     v = os.getenv(name, default)
     return "" if v is None else str(v).strip()
@@ -38,7 +60,6 @@ def _env_json_dict(name: str, default: Dict[str, float]) -> Dict[str, float]:
     try:
         j = json.loads(raw)
         if isinstance(j, dict):
-            # normalisiere Keys auf lowercase
             return {str(k).strip().lower(): float(v) for k, v in j.items()}
     except Exception:
         pass
@@ -108,9 +129,9 @@ def _load_alias_seed() -> pd.DataFrame:
     aliases: Pipe-separiert, z.B.: "Arbitrum|ARB"
     Rückgabe-DF: id, alias (ein Alias pro Zeile, kleinbuchstaben, getrimmt)
     """
-    path = os.path.join(_SEED_DIR, "seed_alias.csv")
+    path = _SEED_DIR / "seed_alias.csv"
     rows = []
-    if os.path.isfile(path):
+    if path.is_file():
         try:
             df = pd.read_csv(path)
             df["id"] = df["id"].astype(str).str.strip()
@@ -138,13 +159,9 @@ def _load_alias_seed() -> pd.DataFrame:
                     rows.append({"id": cid, "alias": a.lower()})
         except Exception as ex:
             logging.warning(f"[buzz] seed_alias.csv lesen fehlgeschlagen: {ex}")
-    # Fallback: leeres DF
     return pd.DataFrame(rows, columns=["id", "alias"])
 
 def _compile_alias_regex(df_alias: pd.DataFrame, ids: List[str]) -> Dict[str, re.Pattern]:
-    """
-    Für jede id baue eine Regex mit Wortgrenzen über alle Aliase.
-    """
     patterns: Dict[str, re.Pattern] = {}
     ids_set = set([str(x).strip() for x in ids])
     if df_alias.empty:
@@ -154,7 +171,6 @@ def _compile_alias_regex(df_alias: pd.DataFrame, ids: List[str]) -> Dict[str, re
         alist = [str(a).strip().lower() for a in grp["alias"].tolist() if str(a).strip()]
         if not alist:
             continue
-        # Sonderzeichen escapen, Wortgrenzen via \b funktionieren schlecht bei Symbolen mit Sonderzeichen → nutze negative/positive Char-Klassen
         parts = [re.escape(a) for a in sorted(set(alist), key=len, reverse=True)]
         pat = r"(?<![A-Za-z0-9])(" + "|".join(parts) + r")(?![A-Za-z0-9])"
         try:
@@ -185,10 +201,6 @@ def _collect_scores_for_ids(
     half_life_h: float,
     now: datetime
 ) -> Dict[str, Dict[str, float]]:
-    """
-    Liefert für jede id: {"w_48h":..., "w_7d":..., "count_48h":..., "count_7d":...}
-    Gewichte: Zeitzerfall * Publisher-Gewicht.
-    """
     out: Dict[str, Dict[str, float]] = {cid: {"w_48h": 0.0, "w_7d": 0.0, "count_48h": 0.0, "count_7d": 0.0} for cid in ids}
     for art in articles or []:
         title = art.get("title", "")
@@ -226,9 +238,6 @@ def add_buzz_metrics_for_candidates(
 ) -> pd.DataFrame:
     """
     Fügt Spalten hinzu: buzz_48h, buzz_7d, buzz_acc, buzz_level.
-    - Alias-Matching via seeds/seed_alias.csv
-    - Zeitzerfall (Half-Life) und Publisher-Gewichte
-    - Buzz-Acceleration: 48h / (7d/7*2)
     Pegged/Wrapped → Buzz=0.
     """
     d = df_in.copy()
@@ -237,7 +246,7 @@ def add_buzz_metrics_for_candidates(
             d[c] = np.nan
         return d
 
-    # Kandidaten bestimmen: nach score_global, fallback market_cap
+    # Kandidaten bestimmen
     if "score_global" in d.columns:
         sub = d.sort_values("score_global", ascending=False).head(int(min(top_n, len(d)))).copy()
     else:
@@ -248,8 +257,7 @@ def add_buzz_metrics_for_candidates(
     # Aliase laden und Regexe kompilieren
     alias_df = _load_alias_seed()
     if alias_df.empty:
-        logging.warning("[buzz] seed_alias.csv leer oder fehlt → Buzz wird sehr konservativ")
-        # Fallback: Aliase aus Name/Symbol
+        logging.warning("[buzz] seed_alias.csv leer oder fehlt → Buzz wird konservativ")
         tmp = []
         for _, r in sub.iterrows():
             tmp.append({"id": str(r["id"]), "alias": str(r.get("symbol", "") or "").strip().lower()})
@@ -274,9 +282,7 @@ def add_buzz_metrics_for_candidates(
         s = scores.get(cid, {})
         w48 = float(s.get("w_48h", 0.0) or 0.0)
         w7d = float(s.get("w_7d", 0.0) or 0.0)
-        # Level = 7d-gewichtete Summe
         level = w7d
-        # Acceleration gemäß Vorgabe
         baseline = (w7d / 7.0) * 2.0 if w7d > 0 else 0.0
         acc = w48 / max(1e-6, baseline) if baseline > 0 else 0.0
         buzz_rows.append({"id": cid, "buzz_48h": w48, "buzz_7d": w7d, "buzz_level": level, "buzz_acc": acc})
@@ -298,4 +304,3 @@ def add_buzz_metrics_for_candidates(
         d.loc[m, ["buzz_48h", "buzz_7d", "buzz_acc", "buzz_level"]] = 0.0
 
     return d
-
