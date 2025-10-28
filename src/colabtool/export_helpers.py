@@ -26,7 +26,7 @@ def make_fulldata(df_in: pd.DataFrame) -> pd.DataFrame:
 
     buzz = _cols(d, ["buzz_48h","buzz_7d","buzz_acc"])
 
-    scores = _cols(d, ["score_global","score_segment","early_score","early_prelim"])
+    scores = _cols(d, ["score_global", "score_segment", "early_score", "early_prelim", "mom_7d_pct", "mom_30d_pct"])
 
     audit = _cols(d, ["risk_regime","beta_pen"])
 
