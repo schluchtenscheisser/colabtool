@@ -104,11 +104,10 @@ def compute_feature_block(df_in: pd.DataFrame) -> pd.DataFrame:
     with np.errstate(divide="ignore", invalid="ignore"):
         d["volume_mc_ratio"] = (d["total_volume"] / d["market_cap"]).replace([np.inf, -np.inf], np.nan)
     d["slope30"] = pd.to_numeric(d.get("price_change_percentage_30d_in_currency"), errors="coerce")
+    d["mom_7d_pct"]  = pd.to_numeric(d.get("price_change_percentage_7d_in_currency"), errors="coerce")
+    d["mom_30d_pct"] = pd.to_numeric(d.get("price_change_percentage_30d_in_currency"), errors="coerce")
     d["ath_drawdown_pct"] = pd.to_numeric(d.get("ath_change_percentage"), errors="coerce")
     d["circ_pct"] = np.nan
-    # Momentum-Features: 7d/30d Preisveränderung in Prozent
-    d["mom_7d_pct"] = pd.to_numeric(d.get("price_change_percentage_7d_in_currency"), errors="coerce")
-    d["mom_30d_pct"] = pd.to_numeric(d.get("price_change_percentage_30d_in_currency"), errors="coerce")
     return d
 
 # ---------- Segmentierung ----------
