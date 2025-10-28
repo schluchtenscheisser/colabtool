@@ -11,6 +11,8 @@ _DEF_MIN = 10
 _DEF_MAX = 40
 _DEF_FALLBACK = 12
 
+EXPORT_PATH = "/content/drive/MyDrive/Colab results"
+
 def _safe_col_width(s: pd.Series) -> int:
     if s is None or s.empty:
         return _DEF_FALLBACK
@@ -28,8 +30,8 @@ def _coerce_for_excel(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
     # Sicherstellen, dass neue Features exportiert werden
         for col in ["mom_7d_pct", "mom_30d_pct"]:
-            if col in df.columns:
-                out[col] = pd.to_numeric(df[col], errors="coerce")
+            if col in out.columns:
+                out[col] = pd.to_numeric(out[col], errors="coerce")
         for c in out.columns:
         s = out[c]
         if is_datetime64_any_dtype(s):
