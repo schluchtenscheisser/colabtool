@@ -1,1 +1,78 @@
+name: gpt-snapshot
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+  release:
+    types: [ published ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install nbformat
+      - name: Build docs/GPT_SNAPSHOT.md
+        run: |
+          python - <<'PY'
+          import os, hashlib
+          from pathlib import Path
+          out = Path("docs/GPT_SNAPSHOT.md")
+          out.parent.mkdir(parents=True, exist_ok=True)
+
+          include = [
+            "pyproject.toml", "requirements.txt", "README.md",
+            ".github/workflows/ci.yml",
+          ]
+          for p in Path("src/colabtool").rglob("*.py"):
+            include.append(str(p))
+          nb_paths = [str(p) for p in Path("notebooks").rglob("*.ipynb")]
+
+          def sha256(p):
+            h=hashlib.sha256()
+            with open(p,"rb") as f:
+              for chunk in iter(lambda:f.read(8192), b""): h.update(chunk)
+            return h.hexdigest()
+          def lang(p):
+            ext = Path(p).suffix.lower().lstrip(".")
+            return {"py":"python","toml":"toml","md":"markdown","yml":"yaml","yaml":"yaml","txt":"text"}.get(ext,"text")
+
+          parts=[]
+          head = os.popen('git rev-parse HEAD').read().strip()
+          parts += [f"# colabtool • GPT snapshot\n\n_Generated from commit: {head}_\n\n"]
+
+          for p in include:
+            if not Path(p).is_file(): continue
+            parts += [f"## {p}\n\nSHA256: `{sha256(p)}`\n\n```{lang(p)}\n",
+                      Path(p).read_text(encoding="utf-8", errors="ignore"), "\n```\n\n"]
+
+          if nb_paths:
+            import nbformat as nbf
+            for nb in nb_paths:
+              parts += [f"## {nb} • code cells\n\nSHA256: `{sha256(nb)}`\n\n"]
+              try:
+                n = nbf.read(nb, as_version=4)
+                code=[]
+                for i,c in enumerate(n.cells):
+                  if c.get("cell_type")=="code":
+                    code.append(f"# cell {i}\n{c.get('source','')}")
+                parts += ["```python\n", "\n\n".join(code), "\n```\n\n"]
+              except Exception as ex:
+                parts += [f"_nb read error: {ex}_\n\n"]
+
+          out.write_text("".join(parts), encoding="utf-8")
+          print(f"Wrote {out}")
+          PY
+      - name: Commit snapshot
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: update GPT_SNAPSHOT.md"
+          file_pattern: docs/GPT_SNAPSHOT.md
 
