@@ -26,7 +26,11 @@ def _safe_col_width(s: pd.Series) -> int:
 
 def _coerce_for_excel(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
-    for c in out.columns:
+    # Sicherstellen, dass neue Features exportiert werden
+        for col in ["mom_7d_pct", "mom_30d_pct"]:
+            if col in df.columns:
+                out[col] = pd.to_numeric(df[col], errors="coerce")
+        for c in out.columns:
         s = out[c]
         if is_datetime64_any_dtype(s):
             out[c] = pd.to_datetime(s, errors="coerce")
