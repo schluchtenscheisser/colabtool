@@ -30,6 +30,12 @@ def write_sheet(df: pd.DataFrame, name: str, writer) -> None:
         df = df.sort_values("early_score", ascending=False)
     except Exception:
         pass
+
+    # Konvertierung für lesbare Ausgabe
+    for col in ["mom_7d_pct", "mom_30d_pct"]:
+        if col in df.columns:
+            df[col] = df[col].map(lambda x: f"{x:.2f}%" if pd.notna(x) else "")
+
     df.to_excel(writer, sheet_name=name, index=False)
     worksheet = writer.sheets[name]
     for i, col in enumerate(df.columns):
