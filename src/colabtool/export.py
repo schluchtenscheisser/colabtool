@@ -28,11 +28,10 @@ def _safe_col_width(s: pd.Series) -> int:
 
 def _coerce_for_excel(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
-    # Sicherstellen, dass neue Features exportiert werden
-        for col in ["mom_7d_pct", "mom_30d_pct"]:
-            if col in out.columns:
-                out[col] = pd.to_numeric(out[col], errors="coerce")
-        for c in out.columns:
+    for col in ["mom_7d_pct", "mom_30d_pct"]:
+        if col in out.columns:
+            out[col] = pd.to_numeric(out[col], errors="coerce")
+    for c in out.columns:
         s = out[c]
         if is_datetime64_any_dtype(s):
             out[c] = pd.to_datetime(s, errors="coerce")
@@ -41,7 +40,7 @@ def _coerce_for_excel(df: pd.DataFrame) -> pd.DataFrame:
             out[c] = s.astype(str)
             continue
         if s.dtype == "object":
-            out[c] = s.apply(lambda x: ", ".join(map(str, x)) if isinstance(x, (list, tuple, set)) else x)
+            out[c] = s.apply(lambda x: "" if isinstance(x, (list, tuple, set)) else x)
     return out
 
 def write_sheet(df: pd.DataFrame, sheet_name: str, writer) -> None:
@@ -87,4 +86,3 @@ def write_meta_sheet(writer, meta: Dict[str, Any]) -> None:
         ws.freeze_panes(1, 1)
     for i, c in enumerate(dfm.columns):
         ws.set_column(i, i, _safe_col_width(dfm[c]))
-
