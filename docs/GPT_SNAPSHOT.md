@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: bf77dc610ea2f68932d99447cb2df680f597baf3_
+_Generated from commit: f3e525d5a73982e07eae9b59daf578e6be56c107_
 
 ## pyproject.toml
 
@@ -114,7 +114,7 @@ jobs:
 
 ## src/colabtool/export.py
 
-SHA256: `474f0ec8f46a7ed0055d495e305a203ac7b5ec5a8cc0c26cac134afed5f8e993`
+SHA256: `10dea31e7c1bfb7e18d2fd51f0cc6f0be77de4e94b6d11e18f682f04a35facf3`
 
 ```python
 from __future__ import annotations
@@ -136,7 +136,10 @@ def _safe_col_width(s: pd.Series) -> int:
     if s is None or s.empty:
         return _DEF_FALLBACK
     if is_numeric_dtype(s):
-        return max(_DEF_MIN, min(_DEF_MAX, int(np.nanmean([len(f"{v:.2f}") for v in s if pd.notna(v)]) + 2)))
+        formatted = [len(f"{v:.2f}") for v in s if pd.notna(v)]
+        if not formatted:
+            return _DEF_FALLBACK
+        return max(_DEF_MIN, min(_DEF_MAX, int(np.nanmean(formatted) + 2)))
     if is_datetime64_any_dtype(s):
         return _DEF_MAX
     if is_categorical_dtype(s):
