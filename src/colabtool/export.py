@@ -17,7 +17,10 @@ def _safe_col_width(s: pd.Series) -> int:
     if s is None or s.empty:
         return _DEF_FALLBACK
     if is_numeric_dtype(s):
-        return max(_DEF_MIN, min(_DEF_MAX, int(np.nanmean([len(f"{v:.2f}") for v in s if pd.notna(v)]) + 2)))
+        formatted = [len(f"{v:.2f}") for v in s if pd.notna(v)]
+        if not formatted:
+            return _DEF_FALLBACK
+        return max(_DEF_MIN, min(_DEF_MAX, int(np.nanmean(formatted) + 2)))
     if is_datetime64_any_dtype(s):
         return _DEF_MAX
     if is_categorical_dtype(s):
