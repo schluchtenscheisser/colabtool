@@ -79,4 +79,4 @@ jobs:
         with:
           commit_message: "chore: update GPT_SNAPSHOT.md"
           file_pattern: docs/GPT_SNAPSHOT.md
-
+          push_options: '--force-with-lease'
