@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 908515a56e8fcf25c0a9d862b96263a2eac13223_
+_Generated from commit: 23c4d0bfdb38dd910a7f2c5d34fbe27476a6554e_
 
 ## pyproject.toml
 
@@ -50,7 +50,7 @@ nbformat
 
 ## README.md
 
-SHA256: `50fe90215e75cb363efc011e1855e979e58dcffed9869f5ffcec80d8d9e6ddd9`
+SHA256: `3ca909379436a76450528b623dafce924132c80309a86ee6bd64840cc8dc3e55`
 
 ```markdown
 # colabtool
@@ -113,15 +113,19 @@ for sub in all_modules:
 
     
 Module
-data_sources: Marktdaten von CoinGecko, MEXC etc.
-features: Feature Engineering inkl. Momentum, Volumenrelation etc.
-metrics: Statistische Kennzahlen wie Volatilität, Drawdowns etc.
-filters: Scoring-basierte Filterlogik.
-viz: Visualisierungen.
-export: Excel-Export mit Formatierung.
-buzz: Verarbeitung externer Newsfeeds.
-category_providers: Sektorbasierte Gruppierung.
-utils: Hilfsfunktionen, Logging.
+backtest: Logik für einfache Backtests oder historische Strategievergleiche
+breakout: Erkennung von Ausbruchs-Signalen auf Basis technischer Metriken
+buzz: News- & Buzz-Analyse, z. B. mit Hilfe von RSS-Feeds
+category_providers: Zuordnung zu Coin-Gecko-Kategorien oder thematischen Gruppen
+cg_cache_patch: Caching-Mechanismen und Workarounds für CoinGecko-APIs
+data_sources: Zentrale Sammlung externer Datenquellen (CoinGecko, CMC etc.)
+export: Excel-Export, Formatierung und Zusatzinfos wie „Meta“-Tab
+export_helpers: Hilfsfunktionen zur tabellarischen Aufbereitung und Formatierung
+exchanges: Filterlogik für Börsen wie MEXC (Spot-only, Paar-Präferenzen etc.)
+features: Ableitung technischer Features wie Momentum, Drawdown, etc.
+pre_universe: Vorbereitung des Universums vor dem eigentlichen Screening
+scores: Gewichtung, Scoring und Ranking von Assets
+utils: Pandas-, NumPy- und Logging-Helfer für konsistente Nutzung
 
 Beispiel-Notebook
 Ein vollständiger Workflow ist im Notebook notebooks/Scanner_v14_5.ipynb enthalten. Es führt durch alle Schritte: Datenerhebung, Feature Engineering, Filterung, Export und Visualisierung.
