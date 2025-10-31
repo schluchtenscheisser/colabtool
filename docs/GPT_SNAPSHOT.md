@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 23c4d0bfdb38dd910a7f2c5d34fbe27476a6554e_
+_Generated from commit: aeebe4b21811ce7e09b7369ff5465f794f0fd044_
 
 ## pyproject.toml
 
@@ -2449,9 +2449,9 @@ SHA256: `01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b`
 
 ```
 
-## notebooks/crypto_scanner_main.ipynb • code cells
+## notebooks/crypto_scanner_main_v14.4.ipynb • code cells
 
-SHA256: `9e46bf42aa1629c82823358dd9fb349903dc7bb5568b718110dc33423eed4858`
+SHA256: `e764f15de61623e684b606811f3d9b97525349d0c75f653095b84308638ad4d1`
 
 ```python
 # cell 0
