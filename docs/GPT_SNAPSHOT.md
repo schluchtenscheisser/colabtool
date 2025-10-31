@@ -1,10 +1,10 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: fd9fd59a6f8d4668a22fd115972eb5329f3ad9ce_
+_Generated from commit: 23948d5981f86a09a3182a6ff0d8bd6f5469dbb6_
 
 ## pyproject.toml
 
-SHA256: `8d54d9aac99b010aa0576b1f08e2c9f98d5987a941a04c963f915c20d9e0a9c8`
+SHA256: `551956a7dc8730ec278037ac4aeebe7677e495e7817a2ea9c2e308b6e7ee8c4a`
 
 ```toml
 [build-system]
@@ -16,17 +16,20 @@ name = "colabtool"
 version = "0.1.1"
 description = "Tool für Colab"
 requires-python = ">=3.10"
+readme = "README.md"
+license = { text = "MIT" }
 dependencies = [
   "numpy",
   "pandas",
   "requests",
   "feedparser",
-  "xlsxwriter"
+  "xlsxwriter",
+  "openpyxl",
+  "nbformat"
 ]
 
 [tool.setuptools.packages.find]
 where = ["src"]
-
 
 ```
 
