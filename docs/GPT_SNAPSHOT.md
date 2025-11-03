@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 1bc214a4e9eef0eedf526cdf471d0ed41ef0024d_
+_Generated from commit: 262f9cea76bb7b7904b972a4992d19588486ae79_
 
 ## pyproject.toml
 
@@ -164,7 +164,7 @@ jobs:
 
 ## src/colabtool/export.py
 
-SHA256: `10dea31e7c1bfb7e18d2fd51f0cc6f0be77de4e94b6d11e18f682f04a35facf3`
+SHA256: `8ec21d79a1680fc9b9c990f52871ec80af1b7d8be4510cee9ffc97a533e0b1b0`
 
 ```python
 from __future__ import annotations
@@ -186,7 +186,7 @@ def _safe_col_width(s: pd.Series) -> int:
     if s is None or s.empty:
         return _DEF_FALLBACK
     if is_numeric_dtype(s):
-        formatted = [len(f"{v:.2f}") for v in s if pd.notna(v)]
+        formatted = [len(f"{v:,.2f}") for v in s if pd.notna(v)]
         if not formatted:
             return _DEF_FALLBACK
         return max(_DEF_MIN, min(_DEF_MAX, int(np.nanmean(formatted) + 2)))
@@ -196,23 +196,35 @@ def _safe_col_width(s: pd.Series) -> int:
         return max(_DEF_MIN, min(_DEF_MAX, s.astype(str).str.len().max()))
     return max(_DEF_MIN, min(_DEF_MAX, s.astype(str).str.len().max()))
 
+def reorder_columns(df: pd.DataFrame) -> pd.DataFrame:
+    fixed_order = [
+        "id", "symbol", "name", "market_cap", "score_global",
+        "total_volume", "Kategorie", "Segment", "score_segment"
+    ]
+    remaining = [col for col in df.columns if col not in fixed_order]
+    return df[fixed_order + remaining]
+
 def write_sheet(df: pd.DataFrame, name: str, writer) -> None:
     df = df.copy()
-    try:
-        df = df.sort_values("early_score", ascending=False)
-    except Exception:
-        pass
-
-    # Konvertierung für lesbare Ausgabe
-    for col in ["mom_7d_pct", "mom_30d_pct"]:
-        if col in df.columns:
-            df[col] = df[col].map(lambda x: f"{x:.2f}%" if pd.notna(x) else "")
+    df = reorder_columns(df)
+    if "score_global" in df.columns:
+        df = df.sort_values("score_global", ascending=False)
 
     df.to_excel(writer, sheet_name=name, index=False)
     worksheet = writer.sheets[name]
-    for i, col in enumerate(df.columns):
+
+    # Formate
+    fmt_thousands = writer.book.add_format({"num_format": "#,##0", "align": "right"})
+    fmt_percent = writer.book.add_format({"num_format": "0.00%", "align": "right"})
+
+    for idx, col in enumerate(df.columns):
         width = _safe_col_width(df[col])
-        worksheet.set_column(i, i, width)
+        if col in ("market_cap", "total_volume"):
+            worksheet.set_column(idx, idx, width, fmt_thousands)
+        elif col in ("mom_7d_pct", "mom_30d_pct"):
+            worksheet.set_column(idx, idx, width, fmt_percent)
+        else:
+            worksheet.set_column(idx, idx, width)
 
 def write_meta_sheet(writer, meta: Dict[str, Any]) -> None:
     meta_df = pd.DataFrame.from_dict(meta, orient="index", columns=["Value"])
