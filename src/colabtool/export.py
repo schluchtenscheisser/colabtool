@@ -32,8 +32,9 @@ def reorder_columns(df: pd.DataFrame) -> pd.DataFrame:
         "id", "symbol", "name", "market_cap", "score_global",
         "total_volume", "Kategorie", "Segment", "score_segment"
     ]
-    remaining = [col for col in df.columns if col not in fixed_order]
-    return df[fixed_order + remaining]
+    available = [col for col in fixed_order if col in df.columns]
+    remaining = [col for col in df.columns if col not in available]
+    return df[available + remaining]
 
 def write_sheet(df: pd.DataFrame, name: str, writer) -> None:
     df = df.copy()
