@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 262f9cea76bb7b7904b972a4992d19588486ae79_
+_Generated from commit: e5224c03aa66bf83007c986e8bb2887020c62f20_
 
 ## pyproject.toml
 
@@ -164,7 +164,7 @@ jobs:
 
 ## src/colabtool/export.py
 
-SHA256: `8ec21d79a1680fc9b9c990f52871ec80af1b7d8be4510cee9ffc97a533e0b1b0`
+SHA256: `469f1e2f1e5b6343367182782cd1ae9356626de0c07e8f19073018d5a566a6f8`
 
 ```python
 from __future__ import annotations
@@ -201,8 +201,9 @@ def reorder_columns(df: pd.DataFrame) -> pd.DataFrame:
         "id", "symbol", "name", "market_cap", "score_global",
         "total_volume", "Kategorie", "Segment", "score_segment"
     ]
-    remaining = [col for col in df.columns if col not in fixed_order]
-    return df[fixed_order + remaining]
+    available = [col for col in fixed_order if col in df.columns]
+    remaining = [col for col in df.columns if col not in available]
+    return df[available + remaining]
 
 def write_sheet(df: pd.DataFrame, name: str, writer) -> None:
     df = df.copy()
