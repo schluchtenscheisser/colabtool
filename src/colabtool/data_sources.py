@@ -329,3 +329,20 @@ def cg_market_chart(coin_id: str, vs: str = "usd", days: int = 60, interval: str
             pass
         return j
     return {"prices": []}
+
+# ----------------------------
+# Implementierung PIT-HIstorie
+# ----------------------------
+def persist_pit_snapshot(data: pd.DataFrame, kind: str, date: Optional[str] = None) -> None:
+    """
+    Speichert ein DataFrame als PIT-Snapshot unter /snapshots/<kind>/yyyymmdd.json
+    """
+    date_str = date or time.strftime("%Y%m%d")
+    path = Path("snapshots") / kind
+    path.mkdir(parents=True, exist_ok=True)
+    file = path / f"{date_str}.json"
+    try:
+        data.to_json(file, orient="records", indent=2)
+    except Exception as ex:
+        logging.warning(f"[pit] Failed to write snapshot {file}: {ex}")
+
