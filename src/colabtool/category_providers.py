@@ -303,4 +303,16 @@ def enrich_categories_hybrid(
         logging.warning(f"[hybrid] Paprika err: {ex}")
 
     _save_cache(cache)
+
+    # NEU: PIT-Snapshot schreiben, falls asof_date gesetzt
+    if "asof_date" in df_in.attrs and len(out) > 0:
+        try:
+            from colabtool.data_sources import persist_pit_snapshot
+            snapshot_df = pd.DataFrame([
+                {"id": k, "category": v} for k, v in out.items()
+            ])
+            persist_pit_snapshot(snapshot_df, kind="cg_categories", date=df_in.attrs["asof_date"])
+        except Exception as ex:
+            logging.warning(f"[pit] Failed to snapshot categories: {ex}")
+
     return out
