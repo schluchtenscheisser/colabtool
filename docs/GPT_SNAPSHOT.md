@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: a5ba80e391d5e2ebe68d1abb12bb08a250a94fc9_
+_Generated from commit: 8d893dcdb97971f47232939f745028952d064c6c_
 
 ## pyproject.toml
 
@@ -1364,7 +1364,7 @@ def add_buzz_metrics_for_candidates(
 
 ## src/colabtool/data_sources.py
 
-SHA256: `88eccd4e655a453daf93f25a63e9f84472c1dd3a8fdd487ccb02d33caef435c2`
+SHA256: `a760e91d08b552f4664e86ba09707f8f9e947d10182a077daa93019aa6107047`
 
 ```python
 # modules/data_sources.py
@@ -1698,6 +1698,23 @@ def cg_market_chart(coin_id: str, vs: str = "usd", days: int = 60, interval: str
             pass
         return j
     return {"prices": []}
+
+# ----------------------------
+# Implementierung PIT-HIstorie
+# ----------------------------
+def persist_pit_snapshot(data: pd.DataFrame, kind: str, date: Optional[str] = None) -> None:
+    """
+    Speichert ein DataFrame als PIT-Snapshot unter /snapshots/<kind>/yyyymmdd.json
+    """
+    date_str = date or time.strftime("%Y%m%d")
+    path = Path("snapshots") / kind
+    path.mkdir(parents=True, exist_ok=True)
+    file = path / f"{date_str}.json"
+    try:
+        data.to_json(file, orient="records", indent=2)
+    except Exception as ex:
+        logging.warning(f"[pit] Failed to write snapshot {file}: {ex}")
+
 
 ```
 
