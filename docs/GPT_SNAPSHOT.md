@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 399333f9c6176febd3807d79ad247243575b90ef_
+_Generated from commit: a5ba80e391d5e2ebe68d1abb12bb08a250a94fc9_
 
 ## pyproject.toml
 
@@ -2459,6 +2459,113 @@ SHA256: `01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b`
 
 ```python
 
+
+```
+
+## notebooks/crypto_scanner_main_local.ipynb • code cells
+
+SHA256: `c168993a01d5484994b3abc9bb594b95781a498fe260b016efa30f073e16c95f`
+
+```python
+# cell 0
+
+import os
+from datetime import datetime
+
+ASOF_DATE = os.environ.get("ASOF_DATE", datetime.today().strftime("%Y%m%d"))
+EXPORT_PATH_LOCAL = f"output/Scanner_export_{ASOF_DATE}.xlsx"
+os.makedirs("output", exist_ok=True)
+
+
+# cell 1
+# 1 Repo klonen oder aktualisieren
+
+import os
+
+REPO_DIR = "/content/colabtool"
+REPO_URL = "https://github.com/schluchtenscheisser/colabtool.git"
+
+if not os.path.exists(REPO_DIR):
+    !git clone $REPO_URL $REPO_DIR
+else:
+    %cd $REPO_DIR
+    !git pull
+    %cd -
+!pip install -r /content/colabtool/requirements.txt
+
+# Alte Zelle
+# %pip install -U "git+https://github.com/schluchtenscheisser/colabtool@main"
+# import importlib, colabtool
+# importlib.reload(colabtool)
+# print("installiert:", colabtool.__file__)
+# import os
+# print("Geladen aus:", os.path.abspath(colabtool.__file__))
+
+# cell 2
+# 2 Module importieren
+import sys
+import importlib
+from pathlib import Path
+
+# Pfad zu deinem Repo
+MODULE_PATH = "/content/colabtool/src"
+sys.path.insert(0, MODULE_PATH)
+
+# Automatisch alle .py-Dateien in colabtool importieren
+pkg_name = "colabtool"
+pkg_path = Path(MODULE_PATH) / pkg_name
+all_modules = [f.stem for f in pkg_path.glob("*.py") if f.name != "__init__.py"]
+
+globals()[pkg_name] = importlib.import_module(pkg_name)
+for mod_name in all_modules:
+    full_mod_name = f"{pkg_name}.{mod_name}"
+    globals()[mod_name] = importlib.import_module(full_mod_name)
+    print(f"✅ geladen: {full_mod_name}")
+
+
+# cell 3
+# 3 Modul-Version validieren
+from pathlib import Path
+import importlib
+import sys
+import time
+
+def reload_and_log(modname: str):
+    if modname in sys.modules:
+        mod = sys.modules[modname]
+        path = Path(mod.__file__)
+        mod_time = time.ctime(path.stat().st_mtime)
+        importlib.reload(mod)
+        print(f"🔁 Reloaded {modname} | 📄 {path.name} | 🕒 {mod_time}")
+    else:
+        print(f"⚠️ Modul {modname} nicht geladen")
+
+# Hauptmodul zuerst
+reload_and_log("colabtool")
+
+# Alle geladenen colabtool-Submodule reloaded dynamisch
+pkg_prefix = "colabtool."
+for name in sorted(sys.modules):
+    if name.startswith(pkg_prefix) and name != "colabtool":
+        reload_and_log(name)
+
+
+# cell 4
+import inspect
+from colabtool.export import _safe_col_width
+print(inspect.getsource(_safe_col_width))
+
+# cell 5
+import inspect
+from colabtool import export
+print(inspect.getsource(export))
+
+
+# cell 6
+import inspect
+from colabtool.features import compute_feature_block
+
+print(inspect.getsource(compute_feature_block))
 
 ```
 
