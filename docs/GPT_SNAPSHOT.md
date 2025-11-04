@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: e841b622d7c982165c6812d5b0622b5a65243805_
+_Generated from commit: e35986b36118e9805f344965c56417c52d7716ff_
 
 ## pyproject.toml
 
@@ -2491,13 +2491,13 @@ SHA256: `01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b`
 
 ```
 
-## notebooks/crypto_scanner_main_PIT.ipynb • code cells
+## notebooks/archive/crypto_scanner_main_PIT(def).ipynb • code cells
 
 SHA256: `b3a23031162ed10502b8791cea18a361e5e6be34cb6b69e5f5dc1c8d1d6b5c67`
 
 _nb read error: Notebook does not appear to be JSON: '{\n "cells": [\n  {\n   "cell_type": "c..._
 
-## notebooks/archive/crypto_scanner_main_PIT(def).ipynb • code cells
+## notebooks/archive/crypto_scanner_main_PIT_2.ipynb • code cells
 
 SHA256: `b3a23031162ed10502b8791cea18a361e5e6be34cb6b69e5f5dc1c8d1d6b5c67`
 
