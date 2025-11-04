@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: b52779872947aaed83a3b18dba9ce207c4e2a63d_
+_Generated from commit: f86be0f4c8f97d2bce5ab48b0620f29435e0e897_
 
 ## pyproject.toml
 
@@ -1950,7 +1950,7 @@ def compute_early_score(df_in: pd.DataFrame, peg_mask: Optional[pd.Series] = Non
 
 ## src/colabtool/category_providers.py
 
-SHA256: `cc399459d4ff7f9f707012fc8b8b3d126abef4610c04e00ca5faa322da292580`
+SHA256: `02de60677ad41688267d28da40099ca3ee6d8944641d23de2573c71a3936d6e9`
 
 ```python
 # modules/category_providers.py
@@ -2258,6 +2258,18 @@ def enrich_categories_hybrid(
         logging.warning(f"[hybrid] Paprika err: {ex}")
 
     _save_cache(cache)
+
+    # NEU: PIT-Snapshot schreiben, falls asof_date gesetzt
+    if "asof_date" in df_in.attrs and len(out) > 0:
+        try:
+            from colabtool.data_sources import persist_pit_snapshot
+            snapshot_df = pd.DataFrame([
+                {"id": k, "category": v} for k, v in out.items()
+            ])
+            persist_pit_snapshot(snapshot_df, kind="cg_categories", date=df_in.attrs["asof_date"])
+        except Exception as ex:
+            logging.warning(f"[pit] Failed to snapshot categories: {ex}")
+
     return out
 
 ```
