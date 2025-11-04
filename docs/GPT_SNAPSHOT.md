@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: e5224c03aa66bf83007c986e8bb2887020c62f20_
+_Generated from commit: 83053c04a2d3af933aa7736b0dfb16740c96d194_
 
 ## pyproject.toml
 
@@ -2957,7 +2957,7 @@ except Exception:
 
 ```
 
-## notebooks/crypto_scanner_main_v14.4.ipynb • code cells
+## notebooks/achive/crypto_scanner_main_v14.4.ipynb • code cells
 
 SHA256: `e764f15de61623e684b606811f3d9b97525349d0c75f653095b84308638ad4d1`
 
