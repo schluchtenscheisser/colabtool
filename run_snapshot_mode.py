@@ -3,11 +3,11 @@ import datetime
 import pandas as pd
 from pathlib import Path
 
-from colabtool.data_sources import (
+# from colabtool.data_sources import (
     # get_cg_categories,
     # fetch_mexc_pairs,
     # get_alias_seed
-)
+# )
 
 def save_snapshot(df: pd.DataFrame, name: str, snapshot_dir: Path) -> None:
     path = snapshot_dir / f"{name}.csv"
