@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: e35986b36118e9805f344965c56417c52d7716ff_
+_Generated from commit: d59337c5cc06c35e0a6bfe12307e4c9d0733d349_
 
 ## pyproject.toml
 
@@ -2488,6 +2488,573 @@ SHA256: `01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b`
 
 ```python
 
+
+```
+
+## notebooks/crypto_scanner_main_PIT (2).ipynb • code cells
+
+SHA256: `da5b31f1e92f0975a2b34ef0623fbd5c3ef5dd3a1d5f0744a9b00577a6f00e80`
+
+```python
+# cell 0
+# Google Drive Bibliothek installieren
+!pip install -U google-api-python-client google-auth google-auth-httplib2 google-auth-oauthlib
+
+
+# cell 1
+# 1 Repo klonen oder aktualisieren
+
+import os
+
+REPO_DIR = "/content/colabtool"
+REPO_URL = "https://github.com/schluchtenscheisser/colabtool.git"
+
+if not os.path.exists(REPO_DIR):
+    !git clone $REPO_URL $REPO_DIR
+else:
+    %cd $REPO_DIR
+    !git pull
+    %cd -
+!pip install -r /content/colabtool/requirements.txt
+
+# Alte Zelle
+# %pip install -U "git+https://github.com/schluchtenscheisser/colabtool@main"
+# import importlib, colabtool
+# importlib.reload(colabtool)
+# print("installiert:", colabtool.__file__)
+# import os
+# print("Geladen aus:", os.path.abspath(colabtool.__file__))
+
+# cell 2
+# 2 Module importieren
+import sys
+import importlib
+from pathlib import Path
+
+# Pfad zu deinem Repo
+MODULE_PATH = "/content/colabtool/src"
+sys.path.insert(0, MODULE_PATH)
+
+# Automatisch alle .py-Dateien in colabtool importieren
+pkg_name = "colabtool"
+pkg_path = Path(MODULE_PATH) / pkg_name
+all_modules = [f.stem for f in pkg_path.glob("*.py") if f.name != "__init__.py"]
+
+globals()[pkg_name] = importlib.import_module(pkg_name)
+for mod_name in all_modules:
+    full_mod_name = f"{pkg_name}.{mod_name}"
+    globals()[mod_name] = importlib.import_module(full_mod_name)
+    print(f"✅ geladen: {full_mod_name}")
+
+
+# cell 3
+# 3 Modul-Version validieren
+from pathlib import Path
+import importlib
+import sys
+import time
+
+def reload_and_log(modname: str):
+    if modname in sys.modules:
+        mod = sys.modules[modname]
+        path = Path(mod.__file__)
+        mod_time = time.ctime(path.stat().st_mtime)
+        importlib.reload(mod)
+        print(f"🔁 Reloaded {modname} | 📄 {path.name} | 🕒 {mod_time}")
+    else:
+        print(f"⚠️ Modul {modname} nicht geladen")
+
+# Hauptmodul zuerst
+reload_and_log("colabtool")
+
+# Alle geladenen colabtool-Submodule reloaded dynamisch
+pkg_prefix = "colabtool."
+for name in sorted(sys.modules):
+    if name.startswith(pkg_prefix) and name != "colabtool":
+        reload_and_log(name)
+
+
+# cell 4
+import inspect
+from colabtool.export import _safe_col_width
+print(inspect.getsource(_safe_col_width))
+
+# cell 5
+import inspect
+from colabtool import export
+print(inspect.getsource(export))
+
+
+# cell 6
+import inspect
+from colabtool.features import compute_feature_block
+
+print(inspect.getsource(compute_feature_block))
+
+
+# cell 7
+# Upload-Code um Dateien hochzuladen (bei Bedarf auskommentieren)
+
+# from google.colab import files
+# files.upload()
+
+
+# cell 8
+# Crypto-Scanner Main (v14.5) — Free-CG stabil, Chart-Cache, Hybrid-Kategorien, Cap 50–1000 Mio, Buzz-Audit
+
+# === Bootstrap: Pakete, Drive, Pfade ===
+import os
+
+# === Logging/Warnungen ===
+import logging as _rootlog, warnings, numpy as _np, pandas as _pd
+_rootlog.basicConfig(level=_rootlog.INFO, format='[%(asctime)s] [%(levelname)s] %(message)s')
+warnings.filterwarnings("ignore", category=RuntimeWarning)
+_pd.options.mode.chained_assignment = None
+_np.seterr(all="ignore")
+
+# === ENV (Free-Plan) ===
+os.environ.update({
+    "COINGECKO_API_KEY": "CG-iM4aTeNWTc2kR2DSLEsTXWui",
+    "CG_FORCE_FREE": "1",
+    "CG_SKIP_AFTER_429": "1",
+    "CG_MAX_ATTEMPTS": "1",
+    "CG_MIN_INTERVAL_S": "3.5",
+    "CG_CATS_TIME_BUDGET_S": "120",
+    "PROVIDERS_CATS_TIME_BUDGET_S": "90",
+    "SKIP_CATEGORIES": os.getenv("SKIP_CATEGORIES", "0"),
+    "REQUIRE_MEXC": os.getenv("REQUIRE_MEXC", "1"),
+    "LIGHT_BREAKOUT_ALL": os.getenv("LIGHT_BREAKOUT_ALL", "0"),
+    "ALLOW_CG_FALLBACK": os.getenv("ALLOW_CG_FALLBACK", "0"),
+    "BUZZ_HALF_LIFE_H": os.getenv("BUZZ_HALF_LIFE_H", "48"),
+    "BUZZ_PUBLISHER_WEIGHTS": os.getenv("BUZZ_PUBLISHER_WEIGHTS", '{"coindesk":1.0,"cointelegraph":1.0,"theblock":1.1,"decrypt":0.9}')
+})
+# Optional Fallback-Provider:
+# os.environ["CMC_API_KEY"] = "..."
+# os.environ["MESSARI_API_KEY"] = "..."
+# os.environ["COINPAPRIKA_API_KEY"] = "..."
+
+# === Imports aus Modulen ===
+from colabtool.utils import logging, time, datetime, timezone, pd, np
+from colabtool.data_sources import cg_markets, map_tvl, update_seen_ids, cg_market_chart
+from colabtool.pre_universe import apply_pre_universe_filters
+from colabtool.exchanges import apply_mexc_filter, export_mexc_seed_template
+from colabtool.features import compute_feature_block, exclusion_mask, peg_like_mask, tag_segment
+from colabtool.scores import score_block, compute_early_score
+from colabtool.breakout import compute_breakout_for_ids
+from colabtool.buzz import add_buzz_metrics_for_candidates
+from colabtool.backtest import backtest_on_snapshot
+from colabtool.export import write_sheet, write_meta_sheet
+from colabtool.export_helpers import make_fulldata
+from colabtool.category_providers import enrich_categories_hybrid
+from colabtool.cg_cache_patch import setup_cg_chart_cache
+
+# ASOF_Date definieren
+from datetime import datetime
+ASOF_DATE = datetime.today().strftime("%Y%m%d")
+
+# Lokaler Cache statt Google Drive
+os.environ["CACHE_DIR"] = "/content/cache/http_cache"
+
+# Pfade und Verzeichnisse
+import os
+#from google.colab import drive
+#
+#MOUNTPOINT = "/content/drive"
+#
+# Wenn bereits gemountet: nicht erneut mounten
+#if not os.path.ismount(MOUNTPOINT):
+    # Wenn dort Dateien liegen → manuelles Cleanup erforderlich
+    #if os.path.exists(MOUNTPOINT) and os.listdir(MOUNTPOINT):
+        #raise RuntimeError(f"❌ Fehler: {MOUNTPOINT} enthält bereits Dateien. Bitte Notebook neu starten.")
+
+    #drive.mount(MOUNTPOINT, force_remount=True)
+
+# Temporäre Pfade und Verzeichnisse
+
+EXPORT_DIR = "/content/snapshots/exports"
+CACHE_DIR  = "/content/snapshots/cache"
+
+os.makedirs(EXPORT_DIR, exist_ok=True)
+os.makedirs(CACHE_DIR, exist_ok=True)
+
+assert os.path.exists(EXPORT_DIR), f"❌ Export-Verzeichnis nicht gefunden: {EXPORT_DIR}"
+os.makedirs(CACHE_DIR, exist_ok=True)
+
+# === CG: /coins/{id}/market_chart Cache aktivieren (24h) ===
+setup_cg_chart_cache(cache_dir=os.path.join(CACHE_DIR, "cg_chart"), ttl_hours=24)
+
+# === CG Smart-Get: Robust gegen Reload & Rekursion ===
+import time as _time, requests as _requests
+from colabtool import data_sources as ds
+
+# Nur patchen, wenn noch nicht gepatcht
+if not hasattr(ds, "_ORIG_CG_GET"):
+    ds._ORIG_CG_GET = ds._cg_get  # Original sichern (nur 1x)
+
+def _cg_get_smart(path, params=None):
+    if path.strip().lower() == "/coins/markets":
+        return ds._ORIG_CG_GET(path, params=params)
+    key = os.getenv("COINGECKO_API_KEY", "").strip()
+    free = os.getenv("CG_FORCE_FREE", "1") == "1" or not key
+    base = "https://api.coingecko.com/api/v3" if free else "https://pro-api.coingecko.com/api/v3"
+    headers = {"Accept": "application/json", "User-Agent": "cg-screener/1.0"}
+    if not free and key:
+        headers["x-cg-pro-api-key"] = key
+    q = dict(params or {})
+    min_interval = float(os.getenv("CG_MIN_INTERVAL_S", "3.5"))
+    last = getattr(ds, "_CG_LAST_CALL_TS", None)
+    if last is not None:
+        delta = _time.perf_counter() - last
+        if delta < min_interval:
+            _time.sleep(min_interval - delta)
+    url = f"{base}{path}"
+    try:
+        sess = getattr(ds, "_SESSION", None)
+        r = (sess or _requests).get(url, headers=headers, params=q, timeout=20)
+        ds._CG_LAST_CALL_TS = _time.perf_counter()
+    except Exception as ex:
+        ds.logging.warning(f"[cg-smart] net err on {url}: {ex}")
+        return {}
+    if r.status_code == 429:
+        ds.logging.warning(f"[cg-smart] 429 on {url} → skip")
+        return {}
+    if r.status_code != 200:
+        ds.logging.warning(f"[cg-smart] HTTP {r.status_code} on {url}")
+        try:
+            return r.json() if r.content else {}
+        except Exception:
+            return {}
+    try:
+        return r.json()
+    except Exception:
+        return {}
+
+# Patch aktivieren
+ds._cg_get = _cg_get_smart
+
+
+# === Lokaler Fallback für /coins/markets ===
+import requests
+def _cg_markets_fallback(vs="usd", per_page=250, pages=1):
+    rows = []
+    headers = {"Accept":"application/json","User-Agent":"cg-screener/1.0"}
+    base = "https://api.coingecko.com/api/v3"
+    for page in range(1, int(pages)+1):
+        params = {
+            "vs_currency": vs, "order": "market_cap_desc",
+            "per_page": int(per_page), "page": int(page),
+            "sparkline": "false", "price_change_percentage": "7d,30d"
+        }
+        r = requests.get(f"{base}/coins/markets", headers=headers, params=params, timeout=25)
+        if r.status_code != 200:
+            logging.warning(f"[cg-fb] HTTP {r.status_code} /coins/markets page={page}"); continue
+        try: data = r.json()
+        except Exception: data = []
+        if isinstance(data, list): rows.extend(data)
+    if not rows: return pd.DataFrame()
+    df = pd.json_normalize(rows, sep="_")
+    want = ["id","symbol","name","market_cap","total_volume",
+            "price_change_percentage_7d_in_currency","price_change_percentage_30d_in_currency",
+            "ath_change_percentage","circulating_supply"]
+    return df[[c for c in want if c in df.columns]].copy()
+
+# === Konfiguration ===
+RUN_MODE = os.environ.get("RUN_MODE", "standard").strip().lower()
+CFG = {
+    "fast":     {"PAGES":1, "BREAKOUT_PER_SEGMENT":{"Hidden Gem":30,"Emerging":20,"Comeback":15,"Momentum Gem":15,"Balanced":20}, "BUZZ_TOPN":120, "DAYS":180, "USE_CP":False, "NEW_LISTINGS":True,  "BACKTEST":False},
+    "standard": {"PAGES":4, "BREAKOUT_PER_SEGMENT":{"Hidden Gem":60,"Emerging":50,"Comeback":40,"Momentum Gem":40,"Balanced":40}, "BUZZ_TOPN":200, "DAYS":365, "USE_CP":True,  "NEW_LISTINGS":False, "BACKTEST":True}
+}[RUN_MODE]
+
+VS = os.environ.get("VS", "usd")
+MIN_VOLUME_USD = float(os.environ.get("MIN_VOLUME_USD", "1000000"))
+REQUIRE_MEXC = os.environ.get("REQUIRE_MEXC", "1") == "1"
+SKIP_CATEGORIES = os.environ.get("SKIP_CATEGORIES", "0") == "1"
+
+# LIGHT_BREAKOUT_ALL je Mode (env kann übersteuern)
+LIGHT_BREAKOUT_ALL = True if RUN_MODE == "fast" else False
+_env_lba = os.environ.get("LIGHT_BREAKOUT_ALL", None)
+if _env_lba in ("0","1"):
+    LIGHT_BREAKOUT_ALL = (_env_lba == "1")
+
+USE_CRYPTOPANIC = CFG["USE_CP"]
+CAP_MIN = 50_000_000
+CAP_MAX = 1_000_000_000
+
+# Zeitstempel (Berlin)
+from datetime import datetime as _dt
+try:
+    from zoneinfo import ZoneInfo
+    _TZ = ZoneInfo("Europe/Berlin")
+except Exception:
+    _TZ = None
+_STAMP = (_dt.now(_TZ) if _TZ else _dt.now()).strftime("%Y-%m-%d - %H-%M")
+EXPORT_NAME = f"Scanner_v14_5_output_{RUN_MODE}_{_STAMP}.xlsx"
+EXPORT_PATH = os.path.join(EXPORT_DIR, EXPORT_NAME)
+
+_pd.set_option("display.max_columns", 160); _pd.set_option("display.width", 220)
+
+# === Regime-Helper ===
+def _mom30_from_chart(prices):
+    if not prices or len(prices) < 31: return np.nan
+    p_now = float(prices[-1][1]); p_30 = float(prices[-31][1]); return (p_now/p_30 - 1.0)*100.0
+def _dd_pct(prices):
+    if not prices or len(prices) < 2: return np.nan
+    arr = [float(p[1]) for p in prices]; p_now = arr[-1]; p_max = max(arr); return (p_now/p_max - 1.0)*100.0 if p_max>0 else np.nan
+def _regime():
+    try:
+        btc = cg_market_chart("bitcoin", vs=VS, days=max(365, CFG["DAYS"]))
+        eth = cg_market_chart("ethereum", vs=VS, days=max(365, CFG["DAYS"]))
+        return {"btc_mom30": _mom30_from_chart(btc.get("prices",[])),
+                "btc_dd": _dd_pct(btc.get("prices",[])),
+                "eth_mom30": _mom30_from_chart(eth.get("prices",[])),
+                "eth_dd": _dd_pct(eth.get("prices",[]))}
+    except Exception as ex:
+        logging.warning(f"[regime] {ex}")
+        return {"btc_mom30": np.nan,"btc_dd": np.nan,"eth_mom30": np.nan,"eth_dd": np.nan}
+
+# =========================
+#          PIPELINE
+# =========================
+t_all = time.perf_counter()
+logging.info(f"[0] Start {datetime.now(timezone.utc).isoformat()} | MODE={RUN_MODE} | PAGES={CFG['PAGES']}")
+
+# [1] Universe (+Fallback)
+t0 = time.perf_counter()
+df = cg_markets(vs=VS, per_page=250, pages=CFG["PAGES"])
+if df is None or df.empty:
+    logging.warning("[main] cg_markets leer → Fallback nutzt direkten /coins/markets Abruf")
+    df = _cg_markets_fallback(vs=VS, per_page=250, pages=CFG["PAGES"])
+if df is None or df.empty:
+    raise RuntimeError("cg_markets leer (Fallback ebenfalls leer)")
+logging.info(f"[1] Märkte: {len(df)} Zeilen in {time.perf_counter()-t0:.2f}s")
+print("Input-Spalten (price_change_*):", [c for c in df.columns if "price_change_percentage" in c])
+
+# [2] Pre + Cap-Range
+t0 = time.perf_counter()
+df = apply_pre_universe_filters(df, min_volume_usd=MIN_VOLUME_USD)
+df["market_cap"] = pd.to_numeric(df["market_cap"], errors="coerce")
+df = df[(df["market_cap"] >= CAP_MIN) & (df["market_cap"] <= CAP_MAX)].copy()
+logging.info(f"[2] Pre+CapRange: übrig {len(df)} in {time.perf_counter()-t0:.2f}s")
+
+# [3] MEXC
+t0 = time.perf_counter()
+df = apply_mexc_filter(df, require_mexc=REQUIRE_MEXC)
+try: export_mexc_seed_template(df, collisions_only=True)
+except Exception: pass
+if len(df) == 0 and REQUIRE_MEXC:
+    raise RuntimeError("Nach MEXC-Schnitt 0 Zeilen.")
+logging.info(f"[3] MEXC ok: {len(df)} in {time.perf_counter()-t0:.2f}s")
+
+# Optional: New Listings
+if CFG.get("NEW_LISTINGS", False):
+    _ = update_seen_ids(df["id"].astype(str).tolist())
+
+# [4] Kategorien (Hybrid, CG NICHT bevorzugt) + TVL
+t0 = time.perf_counter()
+if os.getenv("SKIP_CATEGORIES","0") != "1":
+    df_tmp = df.copy()
+    df_tmp["Segment"] = df_tmp.apply(tag_segment, axis=1)
+    df_tmp["market_cap"] = pd.to_numeric(df_tmp["market_cap"], errors="coerce")
+    df_tmp = df_tmp.sort_values("market_cap", ascending=True)
+    seg_quota_for_cats = {"Hidden Gem":120, "Emerging":90, "Comeback":50, "Momentum Gem":30, "Balanced":10}
+    ids_cat = []
+    for seg, q in seg_quota_for_cats.items():
+        ids_cat.extend(df_tmp[df_tmp["Segment"]==seg].head(q)["id"].astype(str).tolist())
+    if len(ids_cat) < 300:
+        extra = df_tmp[~df_tmp["id"].astype(str).isin(ids_cat)].head(300 - len(ids_cat))
+        ids_cat.extend(extra["id"].astype(str).tolist())
+    ids_cat = list(dict.fromkeys(ids_cat))[:300]
+    df.attrs["asof_date"] = ASOF_DATE
+    cat_map = enrich_categories_hybrid(df, ids_cat, ttl_days=14, max_fetch=200, prefer_cg_first=False)
+    df["Kategorie"] = df["id"].astype(str).map(cat_map).fillna("Unknown")
+else:
+    df["Kategorie"] = "Unknown"
+df = map_tvl(df)
+logging.info(f"[4] Kategorien/TVL ok in {time.perf_counter()-t0:.2f}s")
+
+# [5] Features
+t0 = time.perf_counter()
+df = compute_feature_block(df)
+logging.info(f"[5] Features ok in {time.perf_counter()-t0:.2f}s")
+print("Nach Features‑Block:", df.columns.tolist()[:50])
+print("Spaltenpreise:", [c for c in df.columns if "price_change_percentage" in c])
+
+# [6] Segmente
+df["Segment"] = df.apply(tag_segment, axis=1)
+
+# [7] Regime
+regime_info = _regime()
+
+# [8] Peg/Wrapped/Stable-Maske
+peg_mask = exclusion_mask(df, df.get("Kategorie", pd.Series()))
+
+# [9] Scores
+df = score_block(df, regime_info=regime_info)
+
+# [10] Early Pass1
+df_p1 = df.copy()
+df_p1["breakout_score"] = np.nan
+df_p1["vol_acc"] = 1.0
+df_p1 = compute_early_score(df_p1, peg_mask=peg_mask, regime_info=regime_info)
+df["early_prelim"] = df_p1["early_score"]
+
+# [11] Kandidaten
+def _pick_candidates(dfin, per_segment):
+    out=[]
+    for s, n in per_segment.items():
+        sub = dfin[dfin["Segment"]==s].copy()
+        if sub.empty: continue
+        sub = sub.sort_values(["early_prelim","score_segment"], ascending=[False,False]).head(int(n))
+        out.append(sub)
+    return pd.concat(out, ignore_index=True) if out else dfin.head(0)
+if LIGHT_BREAKOUT_ALL:
+    cand_ids = df.loc[~df["mexc_pair"].isna(), "id"].astype(str).tolist()
+else:
+    cand_ids = _pick_candidates(df, CFG["BREAKOUT_PER_SEGMENT"])["id"].astype(str).tolist()
+
+# [12] Breakout
+t0 = time.perf_counter()
+br = compute_breakout_for_ids(df, cand_ids, days=CFG["DAYS"], progress=True, light=bool(LIGHT_BREAKOUT_ALL))
+if isinstance(br, pd.DataFrame) and not br.empty:
+    df = df.merge(br, on="id", how="left")
+else:
+    for c in ["dist_90","dist_180","dist_365","p365","donch_width","vol_acc","vol_acc_7d","vol_acc_30d","z_break","z_donch","breakout_score","beta_btc","beta_eth","break_vol_mult","price_source"]:
+        if c not in df.columns: df[c] = np.nan
+df["price_source"] = df["price_source"].fillna("cg")
+logging.info(f"[12] Breakout ok in {time.perf_counter()-t0:.2f}s")
+
+# [13] Buzz
+t0 = time.perf_counter()
+df = add_buzz_metrics_for_candidates(
+    df_in=df,
+    top_n=min(CFG["BUZZ_TOPN"], len(df)),
+    use_cp=USE_CRYPTOPANIC,
+    mask_pegged=peg_mask,
+    rss_news=None,
+    cp_api_key=os.getenv("CRYPTOPANIC_API_KEY")
+)
+logging.info(f"[13] Buzz ok in {time.perf_counter()-t0:.2f}s")
+
+# [14] Early final
+t0 = time.perf_counter()
+df = compute_early_score(df, peg_mask=peg_mask, regime_info=regime_info)
+logging.info(f"[14] Early final ok in {time.perf_counter()-t0:.2f}s")
+
+# [15] Rankings
+def _keep_cols(dfin, extra=None):
+    base = ["id","symbol","name","Segment","market_cap","total_volume","mexc_pair","score_global","score_segment","early_score"]
+    ext = extra or []
+    cols = [c for c in base+ext if c in dfin.columns]
+    return dfin[cols].copy()
+top25_global = df.sort_values("score_global", ascending=False).head(25)
+top25_early  = df.sort_values("early_score", ascending=False).head(25)
+seg_names = ["Hidden Gem","Emerging","Comeback","Momentum Gem","Balanced"]
+top10_segments = {}
+for s in seg_names:
+    sub = df[df["Segment"]==s].copy()
+    if not sub.empty: top10_segments[s] = sub.sort_values("early_score", ascending=False).head(10)
+top10_all = pd.concat([v for v in top10_segments.values()], ignore_index=True) if top10_segments else df.head(0)
+
+# [16] FullData (mit Buzz-Spalten)
+print("mom_7d_pct in df:", "mom_7d_pct" in df.columns)
+print("mom_30d_pct in df:", "mom_30d_pct" in df.columns)
+full_data = make_fulldata(df)
+print("mom_7d_pct in full_data:", "mom_7d_pct" in full_data.columns)
+print("mom_30d_pct in full_data:", "mom_30d_pct" in full_data.columns)
+
+# [17] Backtest
+bt = pd.DataFrame()
+if CFG.get("BACKTEST", False):
+    bt = backtest_on_snapshot(df.sort_values("early_score", ascending=False), topk=20, days_list=[20,40,60], vs=VS)
+
+# [18] Meta
+from datetime import datetime as _dtu
+meta = {
+    "version": f"v14.5-{RUN_MODE}",
+    "vs": VS,
+    "min_volume_usd": str(int(MIN_VOLUME_USD)),
+    "cap_min": str(CAP_MIN),
+    "cap_max": str(CAP_MAX),
+    "pages": str(CFG["PAGES"]),
+    "breakout_per_segment": str(CFG["BREAKOUT_PER_SEGMENT"]),
+    "buzz_topn": str(CFG["BUZZ_TOPN"]),
+    "days": str(CFG["DAYS"]),
+    "use_cryptopanic": str(USE_CRYPTOPANIC),
+    "require_mexc": str(REQUIRE_MEXC),
+    "light_breakout_all": "1" if LIGHT_BREAKOUT_ALL else "0",
+    "allow_cg_fallback": os.getenv("ALLOW_CG_FALLBACK","0"),
+    "buzz_half_life_h": os.getenv("BUZZ_HALF_LIFE_H","48"),
+    "publisher_weights": os.getenv("BUZZ_PUBLISHER_WEIGHTS","{}"),
+    "timestamp_utc": _dtu.now(timezone.utc).isoformat(),
+}
+
+# [19] Export
+with pd.ExcelWriter(EXPORT_PATH, engine="xlsxwriter") as w:
+    write_sheet(top25_global, "Top25_Global", w)
+    for s, dseg in top10_segments.items():
+        write_sheet(dseg, f"Top10_{s.replace(' ', '_')}", w)
+    if not top10_all.empty:
+        write_sheet(top10_all, "Top10_AllSegments", w)
+    write_sheet(top25_early, "Top25_EarlySignals", w)
+    write_sheet(full_data, "FullData", w)
+    if CFG.get("BACKTEST", False) and not bt.empty:
+        write_sheet(bt, "Backtest", w)
+    write_meta_sheet(w, meta)
+
+# ------------------
+# [20] Neuer Export in kryptotreiber Google Drive
+import os
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload
+
+def upload_to_drive(service_account_file: str, folder_id: str, local_file_path: str):
+    credentials = service_account.Credentials.from_service_account_file(
+        service_account_file,
+        scopes=["https://www.googleapis.com/auth/drive"]
+    )
+    service = build("drive", "v3", credentials=credentials)
+
+    file_metadata = {
+        "name": os.path.basename(local_file_path),
+        "parents": [folder_id]
+    }
+    media = MediaFileUpload(local_file_path, resumable=True)
+    uploaded_file = service.files().create(
+        body=file_metadata,
+        media_body=media,
+        fields="id"
+    ).execute()
+
+    print(f"✅ Datei hochgeladen – File ID: {uploaded_file.get('id')}")
+
+# Aufruf aus Notebook
+# Beispielpfade anpassen:
+SERVICE_ACCOUNT_FILE = "/content/crypto-drive-export-96ab6bcd019b.json"  # Pfad zur JSON-Datei
+FOLDER_ID = "1Kl29WBUsWBLPMcDyBZ9WBRAvSNzpjSkd"  # Deine Drive-Ordner-ID
+EXPORT_FILE = EXPORT_PATH  # Verweist auf die tatsächlich erzeugte Datei
+
+upload_to_drive(SERVICE_ACCOUNT_FILE, FOLDER_ID, EXPORT_FILE)
+
+# Ende neuer Export
+# ------------------
+
+print("Export:", EXPORT_PATH)
+import os
+print("EXISTIERT:", os.path.exists(EXPORT_PATH))
+print("EXPORT_PATH:", EXPORT_PATH)
+
+try:
+    display(top25_early.head(10)); display(full_data.head(10))
+except Exception:
+    pass
+
+
+# cell 9
+!ls -l /content/snapshots/exports
+
+
+# cell 10
 
 ```
 
