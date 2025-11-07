@@ -3,7 +3,6 @@ import datetime
 import pandas as pd
 from pathlib import Path
 from colabtool.data_sources import (
-    _SEED_PATH,
     _TVL_SEED,
     _MEXC_SEED,
     get_cg_categories,
