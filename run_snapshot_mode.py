@@ -5,7 +5,7 @@ from pathlib import Path
 
 from colabtool.data_sources import (
     # get_cg_categories,
-    fetch_mexc_pairs,
+    # fetch_mexc_pairs,
     # get_alias_seed
 )
 
@@ -25,8 +25,8 @@ def run():
     # save_snapshot(pd.DataFrame(cg_categories), "cg_categories", snapshot_dir)
 
     # MEXC Pairs
-    mexc_df = fetch_mexc_pairs(force=True)
-    save_snapshot(mexc_df, "mexc_pairs", snapshot_dir)
+    # mexc_df = fetch_mexc_pairs(force=True)
+    # save_snapshot(mexc_df, "mexc_pairs", snapshot_dir)
 
     # Alias Seed (if exists)
     # alias_df = get_alias_seed()
