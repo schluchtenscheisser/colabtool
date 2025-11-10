@@ -1,0 +1,185 @@
+# configs/scoring_priorities.yaml
+# Ziel: frühe "early signals" für Altcoins (Wochen–Monate), kein Hinterherlaufen
+# Gewichtete Entscheidungs-Matrix für Entwicklungspriorisierung
+
+scoring_priorities:
+
+  - id: 1
+    name: PIT_Historisierung
+    goal: Vermeidung von Lookahead-Bias, valide Backtests
+    effort: 0.6
+    benefit: 1.0
+    impact_weight: 0.83
+    phase: 1
+    module: core.cache
+
+  - id: 2
+    name: Rally_Distance_Filter
+    goal: Dämpft Scores bei >100% Kursanstieg (Anti-Hinterherlaufen)
+    effort: 0.4
+    benefit: 1.0
+    impact_weight: 0.91
+    phase: 1
+    module: scores
+
+  - id: 3
+    name: ATR_Breakout_Validation
+    goal: Robuste Breakouts statt Fakeouts
+    effort: 0.6
+    benefit: 1.0
+    impact_weight: 0.83
+    phase: 1
+    module: breakout
+
+  - id: 4
+    name: Breakout_Phase_Detection
+    goal: Unterscheidung Pre- vs Post-Breakout
+    effort: 0.6
+    benefit: 1.0
+    impact_weight: 0.83
+    phase: 1
+    module: breakout
+
+  - id: 5
+    name: Signal_Stability_Score
+    goal: Vermeidung kurzlebiger Eintagsfliegen
+    effort: 0.4
+    benefit: 1.0
+    impact_weight: 0.91
+    phase: 1
+    module: scores
+
+  - id: 6
+    name: Buzz_Optimization_NER
+    goal: Höhere Qualität & Neuigkeitsbewertung
+    effort: 0.6
+    benefit: 0.8
+    impact_weight: 0.66
+    phase: 2
+    module: buzz
+
+  - id: 7
+    name: Volume_Quality_Index
+    goal: Bewertung der Liquiditätsqualität (CEX-Tier, Spread, Divergenz)
+    effort: 0.8
+    benefit: 1.0
+    impact_weight: 0.63
+    phase: 2
+    module: features
+
+  - id: 8
+    name: Buzz_Peak_Adjuster
+    goal: Reduktion überhitzter Medien-Hypes
+    effort: 0.4
+    benefit: 0.8
+    impact_weight: 0.73
+    phase: 2
+    module: buzz
+
+  - id: 9
+    name: Unlock_Risk_Score
+    goal: Bewertung Tokenomics-Risiken (FDV/MC, Unlocks)
+    effort: 0.6
+    benefit: 0.8
+    impact_weight: 0.66
+    phase: 2
+    module: features
+
+  - id: 10
+    name: Rebound_Ratio
+    goal: Trennung echter Comebacks vs. Dead Bounces
+    effort: 0.4
+    benefit: 0.6
+    impact_weight: 0.55
+    phase: 2
+    module: scores
+
+  - id: 11
+    name: Leader_Follower_Matrix
+    goal: Erkennung thematischer Trendführer
+    effort: 0.6
+    benefit: 0.8
+    impact_weight: 0.66
+    phase: 3
+    module: analytics
+
+  - id: 12
+    name: Smart_Category_Clustering
+    goal: Präzisere Segmentierung per NLP
+    effort: 0.8
+    benefit: 0.6
+    impact_weight: 0.47
+    phase: 3
+    module: category_providers
+
+  - id: 13
+    name: Shadow_Risk_Filter
+    goal: Illiquidität & manipulierte Volumina erkennen
+    effort: 1.0
+    benefit: 0.8
+    impact_weight: 0.50
+    phase: 3
+    module: features
+
+  - id: 14
+    name: Walk_Forward_Backtest
+    goal: Realistische Strategievalidierung mit Kostenmodell
+    effort: 0.8
+    benefit: 1.0
+    impact_weight: 0.63
+    phase: 3
+    module: backtest
+
+  - id: 15
+    name: Regime_Intelligence_v2
+    goal: Marktphasensteuerung über BTC/ETH Momentum + Flows
+    effort: 1.0
+    benefit: 0.8
+    impact_weight: 0.50
+    phase: 3
+    module: features
+
+  - id: 16
+    name: Temporal_Buzz_Shift
+    goal: Fokus auf Buzz-Trend statt absolutem Level
+    effort: 0.4
+    benefit: 0.6
+    impact_weight: 0.55
+    phase: 3
+    module: buzz
+
+  - id: 17
+    name: Meta_Telemetry_Checks
+    goal: Datenqualität, Debugging, Drift-Detection
+    effort: 0.4
+    benefit: 0.6
+    impact_weight: 0.55
+    phase: 3
+    module: core
+
+  - id: 18
+    name: Adaptive_Segment_Weights
+    goal: Dynamische Gewichtung nach Volatilität / Regime
+    effort: 0.6
+    benefit: 0.6
+    impact_weight: 0.52
+    phase: 3
+    module: scores
+
+  - id: 19
+    name: Mid_Tier_Bias_Penalty
+    goal: Dämpfung von Coins mit schwachen Börsen-Listings
+    effort: 0.4
+    benefit: 0.5
+    impact_weight: 0.45
+    phase: 3
+    module: features
+
+  - id: 20
+    name: Intraday_Timing_Layer
+    goal: Feineres Entry-Timing über 4h/1h-Breakouts
+    effort: 1.0
+    benefit: 0.6
+    impact_weight: 0.38
+    phase: 3
+    module: breakout
