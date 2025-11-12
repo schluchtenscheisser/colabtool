@@ -23,7 +23,7 @@ jobs:
           pip install -e .
 
       - name: Run snapshot script
-        run: python run_snapshot_mode.py
+        run: python -m colabtool.pit_snapshot
 
       - name: Commit snapshots
         run: |
