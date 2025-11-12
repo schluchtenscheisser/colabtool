@@ -15,7 +15,7 @@ def enable_all_sources(monkeypatch):
     monkeypatch.setenv("ENABLE_PIT_ALIAS", "1")
 
 def test_run_creates_snapshots(tmp_path, monkeypatch):
-    monkeypatch.setattr("run_snapshot_mode.snapshot_dir", tmp_path)
+    monkeypatch.setattr("colabtool.pit_snapshot.Path", lambda x=None: tmp_path)
 
     with patch("colabtool.category_providers.get_cg_categories", return_value=[{"id": "defi"}]), \
          patch("colabtool.exchanges.fetch_mexc_pairs", return_value=pd.DataFrame([{"symbol": "ABC_USDT"}])), \
