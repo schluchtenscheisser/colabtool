@@ -32,3 +32,4 @@ def test_run_creates_snapshots(tmp_path, monkeypatch):
         for file in files:
             df = pd.read_csv(file)
             assert not df.empty
+
