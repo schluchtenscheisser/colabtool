@@ -34,7 +34,7 @@ jobs:
           git push
           
       - name: Upload snapshots as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: daily-snapshot
           path: snapshots/
