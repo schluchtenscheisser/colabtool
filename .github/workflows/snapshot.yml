@@ -32,3 +32,9 @@ jobs:
           git add snapshots/*
           git commit -m "[auto] Daily snapshot $(date -I)" || echo "No changes to commit"
           git push
+          
+      - name: Upload snapshots as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: daily-snapshot
+          path: snapshots/
