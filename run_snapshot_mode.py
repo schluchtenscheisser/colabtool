@@ -19,7 +19,11 @@ def run():
     today = datetime.datetime.utcnow().date().strftime("%Y%m%d")
     snapshot_dir = Path("snapshots") / today
     snapshot_dir.mkdir(parents=True, exist_ok=True)
-
+    
+    # TEMP: Dummy-Snapshot erzeugen
+    dummy = pd.DataFrame({"timestamp": [today], "info": ["snapshot test"]})
+    save_snapshot(dummy, "dummy_snapshot", snapshot_dir)
+    
     # CoinGecko Categories
     # cg_categories = get_cg_categories()
     # save_snapshot(pd.DataFrame(cg_categories), "cg_categories", snapshot_dir)
