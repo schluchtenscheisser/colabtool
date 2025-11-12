@@ -4,7 +4,7 @@ import pandas as pd
 from pathlib import Path
 from unittest.mock import patch
 
-from run_snapshot_mode import run
+from colabtool.pit_snapshot import run
 
 SNAPSHOT_DIR = Path("snapshots/20251112")  # anpassen je nach Datum
 
