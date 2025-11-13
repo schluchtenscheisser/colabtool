@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 4690370b896c43eb08eb61cbb0ae2328b60b60d1_
+_Generated from commit: 7359a1fe17af06baee50a13bc0920ce906b78e4a_
 
 ## pyproject.toml
 
@@ -1369,7 +1369,7 @@ def add_buzz_metrics_for_candidates(
 
 ## src/colabtool/data_sources.py
 
-SHA256: `a760e91d08b552f4664e86ba09707f8f9e947d10182a077daa93019aa6107047`
+SHA256: `58b5f8c5a9c4b784873ce95f4338d89f93707e6e86826e4e465dc6032439d337`
 
 ```python
 # modules/data_sources.py
@@ -1719,6 +1719,13 @@ def persist_pit_snapshot(data: pd.DataFrame, kind: str, date: Optional[str] = No
         data.to_json(file, orient="records", indent=2)
     except Exception as ex:
         logging.warning(f"[pit] Failed to write snapshot {file}: {ex}")
+
+# === Dummy-Fallback für PIT-Snapshot ===
+def get_alias_seed() -> pd.DataFrame:
+    """Dummy-Version für PIT-Snapshot – liefert minimale Alias-Zuordnung"""
+    return pd.DataFrame([
+        {"alias": "ABC", "coin_id": "abc"}
+    ])
 
 
 ```
