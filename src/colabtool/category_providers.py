@@ -316,3 +316,12 @@ def enrich_categories_hybrid(
             logging.warning(f"[pit] Failed to snapshot categories: {ex}")
 
     return out
+
+# === Dummy-Fallback für PIT-Snapshot ===
+def get_cg_categories() -> list[dict]:
+    """Dummy-Version für PIT-Snapshot – liefert minimale Kategorien"""
+    return [
+        {"id": "defi", "name": "Decentralized Finance"},
+        {"id": "nft", "name": "NFT"},
+        {"id": "gaming", "name": "Gaming"},
+    ]
