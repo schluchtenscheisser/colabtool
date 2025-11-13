@@ -346,3 +346,10 @@ def persist_pit_snapshot(data: pd.DataFrame, kind: str, date: Optional[str] = No
     except Exception as ex:
         logging.warning(f"[pit] Failed to write snapshot {file}: {ex}")
 
+# === Dummy-Fallback für PIT-Snapshot ===
+def get_alias_seed() -> pd.DataFrame:
+    """Dummy-Version für PIT-Snapshot – liefert minimale Alias-Zuordnung"""
+    return pd.DataFrame([
+        {"alias": "ABC", "coin_id": "abc"}
+    ])
+
