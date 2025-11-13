@@ -253,3 +253,8 @@ def export_mexc_seed_template(df: pd.DataFrame, collisions_only: bool = True) ->
         logging.info(f"[mexc] Seed-Template exportiert: {SEED_FILE} ({len(out)} Zeilen)")
     except Exception as ex:
         logging.warning(f"[mexc] Seed-Export fehlgeschlagen: {ex}")
+
+# === Dummy-Fallback für PIT-Snapshot ===
+def fetch_mexc_pairs(force: bool = False) -> pd.DataFrame:
+    """Dummy-Version für PIT-Snapshot – liefert minimales Paar"""
+    return pd.DataFrame([{"symbol": "ABC_USDT"}])
