@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 5fa41596e2e1030a526d035896d9bb36f0ca3a40_
+_Generated from commit: 186b47fc7fa38840fccd17db2e91e8dc61c9a1be_
 
 ## pyproject.toml
 
@@ -1950,7 +1950,7 @@ def compute_early_score(df_in: pd.DataFrame, peg_mask: Optional[pd.Series] = Non
 
 ## src/colabtool/category_providers.py
 
-SHA256: `02de60677ad41688267d28da40099ca3ee6d8944641d23de2573c71a3936d6e9`
+SHA256: `64b34e8f93311d5d281573cf6e0c870583ccdbe898d5c31a205008270b586a1f`
 
 ```python
 # modules/category_providers.py
@@ -2271,6 +2271,15 @@ def enrich_categories_hybrid(
             logging.warning(f"[pit] Failed to snapshot categories: {ex}")
 
     return out
+
+# === Dummy-Fallback für PIT-Snapshot ===
+def get_cg_categories() -> list[dict]:
+    """Dummy-Version für PIT-Snapshot – liefert minimale Kategorien"""
+    return [
+        {"id": "defi", "name": "Decentralized Finance"},
+        {"id": "nft", "name": "NFT"},
+        {"id": "gaming", "name": "Gaming"},
+    ]
 
 ```
 
