@@ -15,7 +15,7 @@ def enable_all_sources(monkeypatch):
     monkeypatch.setenv("ENABLE_PIT_ALIAS", "1")
 
 def test_run_creates_snapshots(tmp_path, monkeypatch):
-    monkeypatch.setattr("colabtool.pit_snapshot.Path", lambda x=None: tmp_path)
+    monkeypatch.setattr("colabtool.pit_snapshot.Path", lambda x=None: tmp_path / today)
 
     with patch("colabtool.category_providers.get_cg_categories", return_value=[{"id": "defi"}]), \
          patch("colabtool.exchanges.fetch_mexc_pairs", return_value=pd.DataFrame([{"symbol": "ABC_USDT"}])), \
@@ -23,7 +23,9 @@ def test_run_creates_snapshots(tmp_path, monkeypatch):
         
         run()
 
-        files = list(tmp_path.glob("*.csv"))
+        from datetime import datetime
+        today = datetime.utcnow().date().strftime("%Y%m%d")
+        files = list((tmp_path / today).glob("*.csv"))
         names = [f.name for f in files]
         assert "cg_categories.csv" in names
         assert "mexc_pairs.csv" in names
