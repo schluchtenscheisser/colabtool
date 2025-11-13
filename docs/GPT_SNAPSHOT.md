@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 186b47fc7fa38840fccd17db2e91e8dc61c9a1be_
+_Generated from commit: 4690370b896c43eb08eb61cbb0ae2328b60b60d1_
 
 ## pyproject.toml
 
@@ -787,7 +787,7 @@ def http_get_json(url: str, params: dict | None = None, ttl_sec: int = 3600, use
 
 ## src/colabtool/exchanges.py
 
-SHA256: `9c39dc28735a5fadb0572ec977f45f04d10b47f45e30a9ef781c0e7bc52609f9`
+SHA256: `17743e8a32d24f331e9dc3c642c0313349690651b6f5006b61a57c655b219f82`
 
 ```python
 from __future__ import annotations
@@ -1045,6 +1045,11 @@ def export_mexc_seed_template(df: pd.DataFrame, collisions_only: bool = True) ->
         logging.info(f"[mexc] Seed-Template exportiert: {SEED_FILE} ({len(out)} Zeilen)")
     except Exception as ex:
         logging.warning(f"[mexc] Seed-Export fehlgeschlagen: {ex}")
+
+# === Dummy-Fallback für PIT-Snapshot ===
+def fetch_mexc_pairs(force: bool = False) -> pd.DataFrame:
+    """Dummy-Version für PIT-Snapshot – liefert minimales Paar"""
+    return pd.DataFrame([{"symbol": "ABC_USDT"}])
 
 ```
 
