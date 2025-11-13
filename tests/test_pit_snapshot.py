@@ -3,10 +3,7 @@ import pytest
 import pandas as pd
 from pathlib import Path
 from unittest.mock import patch
-
 from colabtool.pit_snapshot import run
-
-SNAPSHOT_DIR = Path("snapshots/20251112")  # anpassen je nach Datum
 
 @pytest.fixture(autouse=True)
 def enable_all_sources(monkeypatch):
@@ -18,8 +15,8 @@ def test_run_creates_snapshots(tmp_path, monkeypatch):
     from datetime import datetime
     today = datetime.utcnow().date().strftime("%Y%m%d")
 
-    # Monkeypatch das globale Snapshot-Verzeichnis
-    monkeypatch.setattr("colabtool.pit_snapshot.Path", lambda x=None: tmp_path / today)
+    # Patch Rootpfad – Datum wird vom Code intern ergänzt
+    monkeypatch.setattr("colabtool.pit_snapshot.Path", lambda x=None: tmp_path)
 
     with patch("colabtool.category_providers.get_cg_categories", return_value=[{"id": "defi"}]), \
          patch("colabtool.exchanges.fetch_mexc_pairs", return_value=pd.DataFrame([{"symbol": "ABC_USDT"}])), \
@@ -27,14 +24,14 @@ def test_run_creates_snapshots(tmp_path, monkeypatch):
 
         run()
 
-        # Sicherstellen, dass erwartete CSV-Dateien erstellt wurden
-        snapshot_files = list((tmp_path / today).glob("*.csv"))
-        names = [f.name for f in snapshot_files]
+        snapshot_dir = tmp_path / today
+        files = list(snapshot_dir.glob("*.csv"))
+        names = [f.name for f in files]
 
         assert "cg_categories.csv" in names
         assert "mexc_pairs.csv" in names
         assert "seed_alias.csv" in names
 
-        for file in snapshot_files:
+        for file in files:
             df = pd.read_csv(file)
             assert not df.empty
