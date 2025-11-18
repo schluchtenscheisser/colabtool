@@ -5,6 +5,7 @@ Erzeugt snapshots/YYYYMMDD_fullsnapshot.xlsx
 
 import os
 from datetime import datetime
+import pandas as pd
 
 # === ENV Variablen und API-Verhalten ===
 os.environ.update({
@@ -31,9 +32,7 @@ from colabtool.buzz import add_buzz_metrics_for_candidates
 from colabtool.scores import score_block, compute_early_score
 from colabtool.backtest import backtest_on_snapshot
 from colabtool.export_helpers import make_fulldata
-from colabtool.export import write_sheet, write_meta_sheet
-
-import pandas as pd
+from colabtool.export import create_full_excel_export, write_sheet  # <-- wichtig: neue Funktion importiert
 
 # === Hauptfunktion ===
 def run_snapshot(mode: str = "standard"):
@@ -78,9 +77,13 @@ def run_snapshot(mode: str = "standard"):
     os.makedirs("snapshots", exist_ok=True)
 
     print(f"📦 Erzeuge Excel: {export_path}")
-    write_sheet(full_df, "FullData", path=export_path)
-    write_meta_sheet(full_df, path=export_path)
-    write_sheet(backtest_results, "Backtest", path=export_path)
+
+    # Excel mit allen Rankings erzeugen
+    create_full_excel_export(full_df, export_path)
+
+    # Backtest nachträglich anhängen
+    with pd.ExcelWriter(export_path, engine="openpyxl", mode="a") as writer:
+        write_sheet(backtest_results, "Backtest", writer)
 
     print(f"🎯 Snapshot abgeschlossen → {export_path}")
     return export_path
