@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 3c0baab7df6a7614ebaf12d7c6ff2f6d314ba69c_
+_Generated from commit: fb48c5b5ed489f3f380a6548d001617cdd5ca441_
 
 ## pyproject.toml
 
@@ -164,7 +164,7 @@ jobs:
 
 ## src/colabtool/run_snapshot_mode.py
 
-SHA256: `a943b5d65291e2a51dea132f30edf1427a53f8a445c9836152328112bae10f1b`
+SHA256: `454b9a30fb5c8571c8eff3635bcc83bceffe007aefce6579fcb1fd5b9ef6970f`
 
 ```python
 """
@@ -174,6 +174,7 @@ Erzeugt snapshots/YYYYMMDD_fullsnapshot.xlsx
 
 import os
 from datetime import datetime
+import pandas as pd
 
 # === ENV Variablen und API-Verhalten ===
 os.environ.update({
@@ -200,9 +201,7 @@ from colabtool.buzz import add_buzz_metrics_for_candidates
 from colabtool.scores import score_block, compute_early_score
 from colabtool.backtest import backtest_on_snapshot
 from colabtool.export_helpers import make_fulldata
-from colabtool.export import write_sheet, write_meta_sheet
-
-import pandas as pd
+from colabtool.export import create_full_excel_export, write_sheet  # <-- wichtig: neue Funktion importiert
 
 # === Hauptfunktion ===
 def run_snapshot(mode: str = "standard"):
@@ -247,9 +246,13 @@ def run_snapshot(mode: str = "standard"):
     os.makedirs("snapshots", exist_ok=True)
 
     print(f"📦 Erzeuge Excel: {export_path}")
-    write_sheet(full_df, "FullData", path=export_path)
-    write_meta_sheet(full_df, path=export_path)
-    write_sheet(backtest_results, "Backtest", path=export_path)
+
+    # Excel mit allen Rankings erzeugen
+    create_full_excel_export(full_df, export_path)
+
+    # Backtest nachträglich anhängen
+    with pd.ExcelWriter(export_path, engine="openpyxl", mode="a") as writer:
+        write_sheet(backtest_results, "Backtest", writer)
 
     print(f"🎯 Snapshot abgeschlossen → {export_path}")
     return export_path
