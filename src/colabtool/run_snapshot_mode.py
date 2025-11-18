@@ -82,7 +82,8 @@ def run_snapshot(mode: str = "standard"):
     print(f"✅ compute_feature_block abgeschlossen")
 
     # 4️⃣ Breakouts (Donchian, ATH-Distanz)
-    df = compute_breakout_for_ids(df)
+    cand_ids = df["id"].tolist()
+    df = compute_breakout_for_ids(df, cand_ids)
     print(f"✅ compute_breakout_for_ids abgeschlossen")
 
     # 5️⃣ Buzz (News & Sentiment)
