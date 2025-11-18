@@ -317,11 +317,30 @@ def enrich_categories_hybrid(
 
     return out
 
-# === Dummy-Fallback für PIT-Snapshot ===
+# === CoinGecko-Kategorien laden ===
 def get_cg_categories() -> list[dict]:
-    """Dummy-Version für PIT-Snapshot – liefert minimale Kategorien"""
-    return [
-        {"id": "defi", "name": "Decentralized Finance"},
-        {"id": "nft", "name": "NFT"},
-        {"id": "gaming", "name": "Gaming"},
-    ]
+    """
+    Lädt CoinGecko-Kategorien live über die öffentliche API.
+    Gibt eine Liste von Dikt-Einträgen mit id und name zurück.
+    """
+    try:
+        import requests
+        url = "https://api.coingecko.com/api/v3/coins/categories"
+        response = requests.get(url, timeout=30)
+        if response.status_code != 200:
+            print(f"[warn] CoinGecko categories request failed: {response.status_code}")
+            return []
+        
+        data = response.json()
+        categories = []
+        for entry in data:
+            if "id" in entry and "name" in entry:
+                categories.append({"id": entry["id"], "name": entry["name"]})
+
+        print(f"✅ get_cg_categories: {len(categories)} Kategorien live von CoinGecko geladen.")
+        return categories
+
+    except Exception as e:
+        print(f"[warn] get_cg_categories fehlgeschlagen: {e}")
+        return []
+
