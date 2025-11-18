@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 1598842f0f3f922add2c7b020e25a64129357307_
+_Generated from commit: 99959f5f92b35dec2e971449074f942e61f3752b_
 
 ## pyproject.toml
 
@@ -1991,7 +1991,7 @@ def compute_early_score(df_in: pd.DataFrame, peg_mask: Optional[pd.Series] = Non
 
 ## src/colabtool/category_providers.py
 
-SHA256: `64b34e8f93311d5d281573cf6e0c870583ccdbe898d5c31a205008270b586a1f`
+SHA256: `acc67975941fae6c3902717e6dd04bf9103a6f6caa58256f1882f3b5254517ad`
 
 ```python
 # modules/category_providers.py
@@ -2313,14 +2313,33 @@ def enrich_categories_hybrid(
 
     return out
 
-# === Dummy-Fallback für PIT-Snapshot ===
+# === CoinGecko-Kategorien laden ===
 def get_cg_categories() -> list[dict]:
-    """Dummy-Version für PIT-Snapshot – liefert minimale Kategorien"""
-    return [
-        {"id": "defi", "name": "Decentralized Finance"},
-        {"id": "nft", "name": "NFT"},
-        {"id": "gaming", "name": "Gaming"},
-    ]
+    """
+    Lädt CoinGecko-Kategorien live über die öffentliche API.
+    Gibt eine Liste von Dikt-Einträgen mit id und name zurück.
+    """
+    try:
+        import requests
+        url = "https://api.coingecko.com/api/v3/coins/categories"
+        response = requests.get(url, timeout=30)
+        if response.status_code != 200:
+            print(f"[warn] CoinGecko categories request failed: {response.status_code}")
+            return []
+        
+        data = response.json()
+        categories = []
+        for entry in data:
+            if "id" in entry and "name" in entry:
+                categories.append({"id": entry["id"], "name": entry["name"]})
+
+        print(f"✅ get_cg_categories: {len(categories)} Kategorien live von CoinGecko geladen.")
+        return categories
+
+    except Exception as e:
+        print(f"[warn] get_cg_categories fehlgeschlagen: {e}")
+        return []
+
 
 ```
 
