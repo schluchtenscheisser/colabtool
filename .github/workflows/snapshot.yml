@@ -38,3 +38,13 @@ jobs:
         with:
           name: daily-snapshot
           path: snapshots/
+          
+      # Excel-Dateien nach Google Drive hochladen
+      - name: Upload Excel to Google Drive
+        if: success()
+        env:
+          GDRIVE_SERVICE_KEY: ${{ secrets.GDRIVE_SERVICE_KEY }}
+          GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
+        run: |
+          pip install --quiet pydrive2
+          python scripts/upload_to_drive.py
