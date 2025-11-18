@@ -254,7 +254,18 @@ def export_mexc_seed_template(df: pd.DataFrame, collisions_only: bool = True) ->
     except Exception as ex:
         logging.warning(f"[mexc] Seed-Export fehlgeschlagen: {ex}")
 
-# === Dummy-Fallback für PIT-Snapshot ===
 def fetch_mexc_pairs(force: bool = False) -> pd.DataFrame:
-    """Dummy-Version für PIT-Snapshot – liefert minimales Paar"""
-    return pd.DataFrame([{"symbol": "ABC_USDT"}])
+    """
+    Lädt alle verfügbaren Handelspaare live von der MEXC-API.
+    Nutzt /api/v3/exchangeInfo und erstellt DataFrame mit Basis, Quote, Symbol.
+    """
+    try:
+        df = _load_mexc_listing()
+        if df is None or df.empty:
+            raise RuntimeError("MEXC returned no data.")
+        print(f"✅ fetch_mexc_pairs: {len(df)} Handelspaare live von MEXC geladen.")
+        return df
+
+    except Exception as e:
+        print(f"[warn] fetch_mexc_pairs fehlgeschlagen: {e}")
+        return pd.DataFrame(columns=["base", "quote", "symbol"])
