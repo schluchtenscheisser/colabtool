@@ -28,8 +28,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e .
 
-      - name: Run snapshot script
-        run: python -m colabtool.pit_snapshot
+      - name: Run full snapshot mode (with scoring & backtest)
+        run: python -m colabtool.run_snapshot_mode
 
       - name: Commit snapshots (robust)
         run: |
