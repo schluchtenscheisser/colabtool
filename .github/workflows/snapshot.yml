@@ -8,6 +8,12 @@ on:
 jobs:
   snapshot:
     runs-on: ubuntu-latest
+    
+    env:
+      ENABLE_PIT_CATEGORIES: "1"
+      ENABLE_PIT_MEXC: "1"
+      ENABLE_PIT_ALIAS: "1"
+    
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
