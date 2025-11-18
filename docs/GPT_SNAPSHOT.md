@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: ec49eca7741a31ec9780d7edd1b84cfa58799927_
+_Generated from commit: 1598842f0f3f922add2c7b020e25a64129357307_
 
 ## pyproject.toml
 
@@ -787,7 +787,7 @@ def http_get_json(url: str, params: dict | None = None, ttl_sec: int = 3600, use
 
 ## src/colabtool/exchanges.py
 
-SHA256: `17743e8a32d24f331e9dc3c642c0313349690651b6f5006b61a57c655b219f82`
+SHA256: `369b67b545e81e96bb920b62352e4014af5e256a248eba0c0d2770894d9a5758`
 
 ```python
 from __future__ import annotations
@@ -1046,10 +1046,21 @@ def export_mexc_seed_template(df: pd.DataFrame, collisions_only: bool = True) ->
     except Exception as ex:
         logging.warning(f"[mexc] Seed-Export fehlgeschlagen: {ex}")
 
-# === Dummy-Fallback für PIT-Snapshot ===
 def fetch_mexc_pairs(force: bool = False) -> pd.DataFrame:
-    """Dummy-Version für PIT-Snapshot – liefert minimales Paar"""
-    return pd.DataFrame([{"symbol": "ABC_USDT"}])
+    """
+    Lädt alle verfügbaren Handelspaare live von der MEXC-API.
+    Nutzt /api/v3/exchangeInfo und erstellt DataFrame mit Basis, Quote, Symbol.
+    """
+    try:
+        df = _load_mexc_listing()
+        if df is None or df.empty:
+            raise RuntimeError("MEXC returned no data.")
+        print(f"✅ fetch_mexc_pairs: {len(df)} Handelspaare live von MEXC geladen.")
+        return df
+
+    except Exception as e:
+        print(f"[warn] fetch_mexc_pairs fehlgeschlagen: {e}")
+        return pd.DataFrame(columns=["base", "quote", "symbol"])
 
 ```
 
