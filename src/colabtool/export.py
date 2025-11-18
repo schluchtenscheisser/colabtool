@@ -66,3 +66,33 @@ def write_meta_sheet(writer, meta: Dict[str, Any]) -> None:
     worksheet = writer.sheets["Meta"]
     worksheet.set_column(0, 0, 40)
     worksheet.set_column(1, 1, 80)
+
+def create_full_excel_export(df: pd.DataFrame, output_path: str) -> None:
+    """
+    Erstellt vollständigen Excel-Export mit Top-Listen und Metadaten.
+    """
+    print(f"📊 Erzeuge Excel mit Rankings → {output_path}")
+
+    # Top25 Global nach Score
+    top25_global = df.sort_values("score_global", ascending=False).head(25)
+
+    # Top10 Hidden Gems (MarketCap ≤ 150 Mio)
+    top10_hidden = df[df["market_cap"] <= 150_000_000].sort_values("score_global", ascending=False).head(10)
+
+    # Top10 Emerging (150–500 Mio)
+    top10_emerging = df[(df["market_cap"] > 150_000_000) & (df["market_cap"] <= 500_000_000)].sort_values("score_global", ascending=False).head(10)
+
+    # Top25 Early Signals
+    top25_early = df.sort_values("early_score", ascending=False).head(25)
+
+    # Writer öffnen
+    with pd.ExcelWriter(output_path, engine="xlsxwriter") as writer:
+        write_sheet(top25_global, "Top25_Global", writer)
+        write_sheet(top10_hidden, "Top10_HiddenGem", writer)
+        write_sheet(top10_emerging, "Top10_Emerging", writer)
+        write_sheet(top25_early, "Top25_EarlySignals", writer)
+        write_sheet(df, "FullData", writer)
+        write_meta_sheet(writer, {"generated": pd.Timestamp.now()})
+
+    print(f"✅ Excel exportiert: {output_path}")
+
