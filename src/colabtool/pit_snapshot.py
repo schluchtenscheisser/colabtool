@@ -55,3 +55,34 @@ def run():
 
 if __name__ == "__main__":
     run()
+    
+from pathlib import Path
+import pandas as pd
+from colabtool.export import write_sheet, write_meta_sheet
+
+def export_excel_snapshot(snapshot_dir: Path):
+    
+    # Aggregiert CSVs aus dem Snapshot-Verzeichnis zu einer Excel-Datei.
+    # Erwartet, dass FullData.csv und Meta-Daten vorhanden sind.
+    
+    excel_path = snapshot_dir / f"{snapshot_dir.name}_snapshot.xlsx"
+    with pd.ExcelWriter(excel_path, engine="xlsxwriter") as writer:
+        # Hauptdatenblatt (falls vorhanden)
+        full_data_path = snapshot_dir / "FullData.csv"
+        if full_data_path.exists():
+            df = pd.read_csv(full_data_path)
+            write_sheet(df, "FullData", writer)
+        else:
+            print("⚠️ FullData.csv nicht gefunden, überspringe diesen Tab.")
+
+        # Meta-Daten (optional)
+        meta_path = snapshot_dir / "meta.json"
+        if meta_path.exists():
+            meta = pd.read_json(meta_path, typ="series")
+            write_meta_sheet(writer, meta.to_dict())
+        else:
+            print("⚠️ meta.json nicht gefunden, kein Meta-Sheet erstellt.")
+
+    print(f"✅ Excel-Snapshot gespeichert: {excel_path}")
+
+
