@@ -25,14 +25,26 @@ jobs:
       - name: Run snapshot script
         run: python -m colabtool.pit_snapshot
 
-      - name: Commit snapshots
+      - name: Commit snapshots (robust)
         run: |
+          set -e
           git config --global user.name 'github-actions'
           git config --global user.email 'actions@github.com'
-          git add snapshots/*
+          git add snapshots/* || true
           git commit -m "[auto] Daily snapshot $(date -I)" || echo "No changes to commit"
-          git push
-          
+
+          max_attempts=3
+          attempt=1
+          until git push; do
+            if [ $attempt -ge $max_attempts ]; then
+              echo "❌ Git push failed after $attempt attempts"
+              exit 1
+            fi
+            echo "⚠️ Push failed (attempt $attempt/$max_attempts), retrying in $((attempt * 10))s..."
+            sleep $((attempt * 10))
+            attempt=$((attempt + 1))
+          done
+
       - name: Upload snapshots as artifact
         uses: actions/upload-artifact@v4
         with:
