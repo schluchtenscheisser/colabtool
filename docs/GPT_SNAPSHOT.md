@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: fb48c5b5ed489f3f380a6548d001617cdd5ca441_
+_Generated from commit: 601245364ac14593cc3782438fce2ce1e09412c3_
 
 ## pyproject.toml
 
@@ -164,11 +164,11 @@ jobs:
 
 ## src/colabtool/run_snapshot_mode.py
 
-SHA256: `454b9a30fb5c8571c8eff3635bcc83bceffe007aefce6579fcb1fd5b9ef6970f`
+SHA256: `d09a6b5ea0cc8b42370633785721fc4604e7aec8fe542baa5a5569bafb01e9bf`
 
 ```python
 """
-Run Snapshot Mode – vollständige Early-Signal-Pipeline mit Backtest
+Run Snapshot Mode – vollständige Early-Signal-Pipeline mit Backtest und Validierung
 Erzeugt snapshots/YYYYMMDD_fullsnapshot.xlsx
 """
 
@@ -201,7 +201,37 @@ from colabtool.buzz import add_buzz_metrics_for_candidates
 from colabtool.scores import score_block, compute_early_score
 from colabtool.backtest import backtest_on_snapshot
 from colabtool.export_helpers import make_fulldata
-from colabtool.export import create_full_excel_export, write_sheet  # <-- wichtig: neue Funktion importiert
+from colabtool.export import create_full_excel_export, write_sheet  # neue Funktion
+
+# === Validierung ===
+def validate_scores(df: pd.DataFrame) -> None:
+    """
+    Validiert, ob score_global und early_score korrekt berechnet wurden.
+    Bricht mit Fehlermeldung ab, wenn Daten unvollständig oder leer sind.
+    """
+    required_cols = ["score_global", "early_score"]
+    missing = [c for c in required_cols if c not in df.columns]
+    if missing:
+        raise ValueError(f"❌ Fehlende Score-Spalten: {missing}")
+
+    # NaN-Anteile prüfen
+    nan_counts = df[required_cols].isna().sum()
+    if nan_counts.any():
+        print(f"⚠️ Warnung: NaN-Werte gefunden:\n{nan_counts}")
+        df = df.dropna(subset=required_cols)
+
+    # Gültige Zeilen zählen
+    valid_count = len(df)
+    if valid_count < 100:
+        raise ValueError(f"❌ Zu wenige valide Score-Zeilen: {valid_count}")
+
+    # Wertebereich prüfen
+    for col in required_cols:
+        if df[col].abs().mean() < 0.05:
+            print(f"⚠️ Warnung: {col} wirkt zu flach normalisiert (mean≈0)")
+
+    print(f"✅ Score-Validierung bestanden ({valid_count} valide Zeilen)")
+
 
 # === Hauptfunktion ===
 def run_snapshot(mode: str = "standard"):
@@ -232,6 +262,9 @@ def run_snapshot(mode: str = "standard"):
     df = score_block(df)
     df = compute_early_score(df)
     print(f"✅ Scores & Early Score berechnet")
+
+    # ✅ Score-Validierung
+    validate_scores(df)
 
     # 7️⃣ Backtest
     backtest_results = backtest_on_snapshot(df, top_k=20, horizons=[20, 40, 60])
