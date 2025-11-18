@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 0b9fcae01d60726eb6471b28b0b03cbbf8a81363_
+_Generated from commit: 27fa16b52dab35eee9dfd6404a95e7f74f6bf68c_
 
 ## pyproject.toml
 
@@ -1369,7 +1369,7 @@ def add_buzz_metrics_for_candidates(
 
 ## src/colabtool/data_sources.py
 
-SHA256: `58b5f8c5a9c4b784873ce95f4338d89f93707e6e86826e4e465dc6032439d337`
+SHA256: `453e9e521bea3d91bc4699848f8265a952b5888cbdd6c6cbf959d1aa791ef06c`
 
 ```python
 # modules/data_sources.py
@@ -1720,13 +1720,31 @@ def persist_pit_snapshot(data: pd.DataFrame, kind: str, date: Optional[str] = No
     except Exception as ex:
         logging.warning(f"[pit] Failed to write snapshot {file}: {ex}")
 
-# === Dummy-Fallback für PIT-Snapshot ===
 def get_alias_seed() -> pd.DataFrame:
-    """Dummy-Version für PIT-Snapshot – liefert minimale Alias-Zuordnung"""
-    return pd.DataFrame([
-        {"alias": "ABC", "coin_id": "abc"}
-    ])
+    """
+    Lädt Alias-Daten live von CoinGecko.
+    Erstellt eine Alias-Tabelle (alias = Name, coin_id = CoinGecko-ID)
+    und liefert sie als DataFrame zurück.
+    """
+    try:
+        from colabtool.category_providers import get_cg_categories
+        cg_data = get_cg_categories()
+        if not cg_data:
+            print("[warn] Keine CoinGecko-Daten empfangen – leere Tabelle wird erzeugt")
+            return pd.DataFrame(columns=["alias", "coin_id"])
 
+        aliases = []
+        for c in cg_data:
+            if isinstance(c, dict) and "id" in c and "name" in c:
+                aliases.append({"alias": c["name"], "coin_id": c["id"]})
+
+        df = pd.DataFrame(aliases)
+        print(f"✅ get_alias_seed: {len(df)} Einträge von CoinGecko geladen.")
+        return df
+
+    except Exception as e:
+        print(f"[warn] get_alias_seed fehlgeschlagen: {e}")
+        return pd.DataFrame(columns=["alias", "coin_id"])
 
 ```
 
