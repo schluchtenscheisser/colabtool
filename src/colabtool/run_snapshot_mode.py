@@ -81,6 +81,13 @@ def run_snapshot(mode: str = "standard"):
     df = compute_feature_block(df)
     print(f"✅ compute_feature_block abgeschlossen")
 
+    # 3b️⃣ MEXC-Paare mappen (für Breakout-Analysen erforderlich)
+    from colabtool.exchanges import map_mexc_pairs
+    df = map_mexc_pairs(df)
+    if "mexc_pair" not in df.columns or df["mexc_pair"].isna().all():
+        raise ValueError("❌ Keine MEXC-Paare gefunden – Breakout-Berechnung nicht möglich.")
+    print(f"✅ map_mexc_pairs: {df['mexc_pair'].notna().sum()} gültige Paare gefunden")
+
     # 4️⃣ Breakouts (Donchian, ATH-Distanz)
     cand_ids = df["id"].tolist()
     df = compute_breakout_for_ids(df, cand_ids)
