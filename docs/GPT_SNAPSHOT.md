@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 601245364ac14593cc3782438fce2ce1e09412c3_
+_Generated from commit: ca68c44e164665b143fe3fb70fea4b44be5a3b17_
 
 ## pyproject.toml
 
@@ -164,7 +164,7 @@ jobs:
 
 ## src/colabtool/run_snapshot_mode.py
 
-SHA256: `d09a6b5ea0cc8b42370633785721fc4604e7aec8fe542baa5a5569bafb01e9bf`
+SHA256: `0fe747a140d2a2835c092895acef8a8d70c99606b0b17ec76de26faefd8a8737`
 
 ```python
 """
@@ -251,7 +251,8 @@ def run_snapshot(mode: str = "standard"):
     print(f"✅ compute_feature_block abgeschlossen")
 
     # 4️⃣ Breakouts (Donchian, ATH-Distanz)
-    df = compute_breakout_for_ids(df)
+    cand_ids = df["id"].tolist()
+    df = compute_breakout_for_ids(df, cand_ids)
     print(f"✅ compute_breakout_for_ids abgeschlossen")
 
     # 5️⃣ Buzz (News & Sentiment)
