@@ -52,29 +52,29 @@ jobs:
           path: snapshots/
           
       # ============================================================
-      # ☁️ Upload Snapshot Excel-Dateien nach Google Drive (Service Account)
+      # ☁️ (DEAKTIVIERT) Upload Snapshot Excel-Dateien nach Google Drive (Service Account)
       # ============================================================
-      - name: 📤 Upload Excel to Google Drive
-        if: success()
-        env:
-          GDRIVE_SERVICE_KEY: ${{ secrets.GDRIVE_SERVICE_KEY }}
-          GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
-        run: |
-          echo "🔧 Installing Google API dependencies..."
-          pip install --quiet google-api-python-client google-auth google-auth-httplib2 google-auth-oauthlib
+      #- name: 📤 Upload Excel to Google Drive
+      #  if: success()
+      #  env:
+      #    GDRIVE_SERVICE_KEY: ${{ secrets.GDRIVE_SERVICE_KEY }}
+      #    GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
+      #  run: |
+      #    echo "🔧 Installing Google API dependencies..."
+      #    pip install --quiet google-api-python-client google-auth google-auth-httplib2 google-auth-oauthlib
 
-          echo "🚀 Starting upload via Service Account..."
-          max_attempts=3
-          attempt=1
+      #    echo "🚀 Starting upload via Service Account..."
+      #    max_attempts=3
+      #    attempt=1
 
-          until python scripts/upload_to_drive.py; do
-            if [ $attempt -ge $max_attempts ]; then
-              echo "❌ Upload failed after $attempt attempts"
-              exit 1
-            fi
-            echo "⚠️ Upload failed (attempt $attempt/$max_attempts), retrying in $((attempt * 15))s..."
-            sleep $((attempt * 15))
-            attempt=$((attempt + 1))
-          done
+      #    until python scripts/upload_to_drive.py; do
+      #      if [ $attempt -ge $max_attempts ]; then
+      #        echo "❌ Upload failed after $attempt attempts"
+      #        exit 1
+      #      fi
+      #      echo "⚠️ Upload failed (attempt $attempt/$max_attempts), retrying in $((attempt * 15))s..."
+      #      sleep $((attempt * 15))
+      #      attempt=$((attempt + 1))
+      #    done
 
-          echo "✅ All Excel snapshots uploaded successfully."
+      #    echo "✅ All Excel snapshots uploaded successfully."
