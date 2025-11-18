@@ -46,5 +46,5 @@ jobs:
           GDRIVE_SERVICE_KEY: ${{ secrets.GDRIVE_SERVICE_KEY }}
           GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
         run: |
-          pip install --quiet pydrive2
+          pip install --quiet google-api-python-client google-auth google-auth-httplib2 google-auth-oauthlib
           python scripts/upload_to_drive.py
