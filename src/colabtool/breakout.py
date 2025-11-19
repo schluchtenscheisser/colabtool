@@ -257,12 +257,20 @@ def compute_breakout_for_ids(df_all: pd.DataFrame,
     dfb["break_vol_mult"] = pd.to_numeric(dfb["vol_acc"], errors="coerce")
 
     # Finales Set
+    # Zusätzliche Metadaten aus Ursprungs-DF übernehmen
+    meta_cols = ["market_cap", "symbol"]
+    for mc in meta_cols:
+        if mc in df_all.columns:
+            dfb = dfb.merge(df_all[["id", mc]], on="id", how="left")
+
     keep = [
-        "id","breakout_score","z_break","z_donch","dist_90","dist_180","dist_365",
+        "id","symbol","market_cap",
+        "breakout_score","z_break","z_donch","dist_90","dist_180","dist_365",
         "p365","vol_acc","vol_acc_7d","vol_acc_30d","break_vol_mult","donch_width","beta_btc","beta_eth","price_source"
     ]
     for k in keep:
         if k not in dfb.columns:
             dfb[k] = np.nan
     return dfb[keep].copy()
+
 
