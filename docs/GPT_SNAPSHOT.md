@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 69f354eb7ea178cdd1dfda93eabf7794a4c4253d_
+_Generated from commit: f40d492d43aa3269134422048b590f809cd5b14a_
 
 ## pyproject.toml
 
@@ -2036,7 +2036,7 @@ def map_mexc_pairs(df: pd.DataFrame) -> pd.DataFrame:
 
 ## src/colabtool/pre_universe.py
 
-SHA256: `010af63a3614bb46a38d243673f050616ff0e5f9c9c000b17554ad460611b2a2`
+SHA256: `7859a9bedc558bf33a641f498ff4c445ee99bed33a12382cb39a1d3e83f6d77b`
 
 ```python
 
@@ -2081,7 +2081,12 @@ def apply_pre_universe_filters(df_in: pd.DataFrame, min_volume_usd: float = 1_00
     # Basis
     d["market_cap"] = pd.to_numeric(d.get("market_cap"), errors="coerce")
     d["total_volume"] = pd.to_numeric(d.get("total_volume"), errors="coerce")
-    d = d[(d["market_cap"] > 0) & (d["total_volume"] >= float(min_volume_usd))].copy()
+    # Market Cap Range: 100 Mio < MC < 3 Mrd
+    d = d[
+        (d["market_cap"] > 100_000_000) &
+        (d["market_cap"] < 3_000_000_000) &
+        (d["total_volume"] >= float(min_volume_usd))
+    ].copy()
 
     # Heuristiken
     m_stable = d.apply(lambda r: is_stable_like(r.get("name",""), r.get("symbol",""), r.get("id","")), axis=1)
