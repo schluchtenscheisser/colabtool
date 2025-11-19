@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: dddddaaa3569a177f885774165af9a6377977741_
+_Generated from commit: b15fe89bcb04af81f166ca7fd7e71c5dfc47398b_
 
 ## pyproject.toml
 
@@ -1552,7 +1552,7 @@ def add_buzz_metrics_for_candidates(
 
 ## src/colabtool/data_sources.py
 
-SHA256: `495db6396e86c53b811e1093da1cc3ac2730f4edc85c666b68ddfe946c81af6c`
+SHA256: `15218eb2a7178df2ced18bf4a916ddfea06aeb9f13af7e388711428841bf2f12`
 
 ```python
 # modules/data_sources.py
@@ -2013,12 +2013,19 @@ def map_mexc_pairs(df: pd.DataFrame) -> pd.DataFrame:
             df["mexc_pair"] = None
             return df
 
-    # Spalten prüfen
-    expected_cols = {"base", "quote", "symbol"}
-    if not expected_cols.issubset(mexc_pairs.columns):
-        print(f"⚠️ Unerwartete Struktur in MEXC-Daten: {list(mexc_pairs.columns)} – Mapping übersprungen.")
-        df["mexc_pair"] = None
-        return df
+        # Struktur angleichen (z. B. baseAsset -> base)
+        rename_map = {
+            "baseAsset": "base",
+            "quoteAsset": "quote"
+        }
+        mexc_pairs = mexc_pairs.rename(columns=rename_map)
+        
+        # Spalten prüfen
+        expected_cols = {"base", "quote", "symbol"}
+        if not expected_cols.issubset(mexc_pairs.columns):
+            print(f"⚠️ Unerwartete Struktur in MEXC-Daten: {list(mexc_pairs.columns)} – Mapping übersprungen.")
+            df["mexc_pair"] = None
+            return df
 
     mexc_pairs["base"] = mexc_pairs["base"].str.upper()
     mexc_pairs["quote"] = mexc_pairs["quote"].str.upper()
