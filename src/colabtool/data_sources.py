@@ -371,3 +371,35 @@ def get_alias_seed() -> pd.DataFrame:
     except Exception as e:
         print(f"[warn] get_alias_seed fehlgeschlagen: {e}")
         return pd.DataFrame(columns=["alias", "coin_id"])
+
+# Map MEXC Pairs
+
+import pandas as pd
+
+def map_mexc_pairs(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Ergänzt die Spalte 'mexc_pair' basierend auf der MEXC-Paarliste (mexc_pairs.csv).
+    Erwartet Spalten 'symbol' und 'id' im Eingabedatensatz.
+    """
+    try:
+        mexc_pairs = pd.read_csv("mexc_pairs.csv")
+    except FileNotFoundError:
+        print("⚠️ Datei mexc_pairs.csv nicht gefunden – Mapping übersprungen.")
+        df["mexc_pair"] = None
+        return df
+
+    mexc_pairs["base"] = mexc_pairs["base"].str.upper()
+    mexc_pairs["quote"] = mexc_pairs["quote"].str.upper()
+
+    # Wir bevorzugen USDT-Paare
+    mexc_pairs = mexc_pairs[mexc_pairs["quote"] == "USDT"]
+
+    mapping = dict(zip(mexc_pairs["base"], mexc_pairs["symbol"]))
+    df["symbol"] = df["symbol"].str.upper()
+    df["mexc_pair"] = df["symbol"].map(mapping)
+
+    found = df["mexc_pair"].notna().sum()
+    print(f"✅ map_mexc_pairs: {found} gültige MEXC-Paare gemappt")
+
+    return df
+
