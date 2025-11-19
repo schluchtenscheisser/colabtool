@@ -178,43 +178,63 @@ def _cg_get(path: str, params: Optional[dict] = None, attempts: int = None) -> O
 # ----------------------------
 # Public API
 # ----------------------------
-def cg_markets(vs: str = "usd", per_page: int = 250, pages: int = 1) -> pd.DataFrame:
-    out: List[pd.DataFrame] = []
-    for p in range(1, int(pages) + 1):
-        params = {
-            "vs_currency": str(vs or "usd").lower(),
-            "order": "market_cap_desc",
-            "per_page": int(per_page),
-            "page": int(p),
-            "sparkline": "false",
-            "price_change_percentage": "7d,30d",
-        }
-        j = _cg_get("/coins/markets", params=params)
-        if not isinstance(j, list) or not j:
-            if p == 1:
-                logging.warning("[cg] /coins/markets leer oder Fehler")
-            break
-        dfp = pd.json_normalize(j)
-        keep = [
-            "id","symbol","name","market_cap","total_volume",
-            "price_change_percentage_7d_in_currency","price_change_percentage_30d_in_currency",
-            "ath_change_percentage"
-        ]
-        for k in keep:
-            if k not in dfp.columns:
-                dfp[k] = np.nan
-        out.append(dfp[keep].copy())
+import pandas as pd
+import os
+import requests
+from datetime import datetime, timedelta
 
-    if not out:
-        return pd.DataFrame(columns=[
-            "id","symbol","name","market_cap","total_volume",
-            "price_change_percentage_7d_in_currency","price_change_percentage_30d_in_currency",
-            "ath_change_percentage"
-        ])
+def cg_markets(vs: str = "usd", pages: int = 4, cache_hours: int = 24) -> pd.DataFrame:
+    """
+    Lädt CoinGecko-Markt-Daten mit automatischem Cache-Mechanismus.
+    - nutzt lokalen Cache (snapshots/cg_markets.csv), wenn <cache_hours alt
+    - sonst lädt Live-Daten von der CoinGecko API
+    """
+    cache_path = "snapshots/cg_markets.csv"
+    use_live = True
 
-    df = pd.concat(out, ignore_index=True)
-    for c in ["market_cap","total_volume","price_change_percentage_7d_in_currency","price_change_percentage_30d_in_currency","ath_change_percentage"]:
-        df[c] = pd.to_numeric(df[c], errors="coerce")
+    # === 1️⃣ Cache prüfen ===
+    if os.path.exists(cache_path):
+        mtime = datetime.fromtimestamp(os.path.getmtime(cache_path))
+        age_hours = (datetime.now() - mtime).total_seconds() / 3600
+        if age_hours <= cache_hours:
+            print(f"✅ Verwende gecachte CoinGecko-Daten ({age_hours:.1f}h alt)")
+            df = pd.read_csv(cache_path)
+            use_live = False
+        else:
+            print(f"⚠️ Cache älter als {cache_hours}h – hole Live-Daten von CoinGecko ...")
+
+    # === 2️⃣ Live-Daten abrufen ===
+    if use_live:
+        all_pages = []
+        for page in range(1, pages + 1):
+            url = (
+                f"https://api.coingecko.com/api/v3/coins/markets?"
+                f"vs_currency={vs}&order=market_cap_desc&per_page=250&page={page}"
+                f"&sparkline=false&price_change_percentage=1h,24h,7d,30d"
+            )
+            print(f"🔄 Hole CoinGecko Seite {page}/{pages} ...")
+            try:
+                resp = requests.get(url, timeout=15)
+                if resp.status_code == 429:
+                    print("⏳ Rate limit erreicht – warte 30s ...")
+                    import time; time.sleep(30)
+                    resp = requests.get(url, timeout=15)
+                resp.raise_for_status()
+                data = resp.json()
+                all_pages.extend(data)
+            except Exception as e:
+                raise ValueError(f"❌ Fehler beim Laden von CoinGecko Seite {page}: {e}")
+
+        df = pd.DataFrame(all_pages)
+        os.makedirs("snapshots", exist_ok=True)
+        df.to_csv(cache_path, index=False)
+        print(f"✅ Live CoinGecko-Daten geladen ({len(df)} Einträge) und gecached")
+
+    # === 3️⃣ Nachbearbeitung ===
+    # Entferne Coins ohne Market Cap oder Volume
+    df = df[df["market_cap"].notna() & df["total_volume"].notna()]
+    print(f"[INFO] cg_markets: {len(df)} valide Coins nach Filterung")
+
     return df
 
 def enrich_categories(ids: List[str], sleep_s: float = 0.0) -> Dict[str, str]:
