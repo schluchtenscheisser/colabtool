@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 0a21d634476c2d6f31e1b6111cda8a49226e2ab8_
+_Generated from commit: 3d959ea145a25b0c3c79ae576da5b6654c9e9fe7_
 
 ## pyproject.toml
 
@@ -1552,7 +1552,7 @@ def add_buzz_metrics_for_candidates(
 
 ## src/colabtool/data_sources.py
 
-SHA256: `453e9e521bea3d91bc4699848f8265a952b5888cbdd6c6cbf959d1aa791ef06c`
+SHA256: `249b507e5c80bfc9712c2360ce9aff17de8a0597a81478898de96140a079d2f2`
 
 ```python
 # modules/data_sources.py
@@ -1928,6 +1928,38 @@ def get_alias_seed() -> pd.DataFrame:
     except Exception as e:
         print(f"[warn] get_alias_seed fehlgeschlagen: {e}")
         return pd.DataFrame(columns=["alias", "coin_id"])
+
+# Map MEXC Pairs
+
+import pandas as pd
+
+def map_mexc_pairs(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Ergänzt die Spalte 'mexc_pair' basierend auf der MEXC-Paarliste (mexc_pairs.csv).
+    Erwartet Spalten 'symbol' und 'id' im Eingabedatensatz.
+    """
+    try:
+        mexc_pairs = pd.read_csv("mexc_pairs.csv")
+    except FileNotFoundError:
+        print("⚠️ Datei mexc_pairs.csv nicht gefunden – Mapping übersprungen.")
+        df["mexc_pair"] = None
+        return df
+
+    mexc_pairs["base"] = mexc_pairs["base"].str.upper()
+    mexc_pairs["quote"] = mexc_pairs["quote"].str.upper()
+
+    # Wir bevorzugen USDT-Paare
+    mexc_pairs = mexc_pairs[mexc_pairs["quote"] == "USDT"]
+
+    mapping = dict(zip(mexc_pairs["base"], mexc_pairs["symbol"]))
+    df["symbol"] = df["symbol"].str.upper()
+    df["mexc_pair"] = df["symbol"].map(mapping)
+
+    found = df["mexc_pair"].notna().sum()
+    print(f"✅ map_mexc_pairs: {found} gültige MEXC-Paare gemappt")
+
+    return df
+
 
 ```
 
