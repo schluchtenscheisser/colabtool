@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 3486dbe77e886ff5d5edc02854d52fa0ffb29b1e_
+_Generated from commit: 7939e067b6dde2c7f5f95fb77e6359e3958f21cb_
 
 ## pyproject.toml
 
@@ -1552,7 +1552,7 @@ def add_buzz_metrics_for_candidates(
 
 ## src/colabtool/data_sources.py
 
-SHA256: `249b507e5c80bfc9712c2360ce9aff17de8a0597a81478898de96140a079d2f2`
+SHA256: `c38593583b34991095fdacf5d86ea33961ac0b1c8c0974bbf12dc25ba9aa50ae`
 
 ```python
 # modules/data_sources.py
@@ -1932,23 +1932,46 @@ def get_alias_seed() -> pd.DataFrame:
 # Map MEXC Pairs
 
 import pandas as pd
+import os
+import requests
+from datetime import datetime, timedelta
 
 def map_mexc_pairs(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Ergänzt die Spalte 'mexc_pair' basierend auf der MEXC-Paarliste (mexc_pairs.csv).
-    Erwartet Spalten 'symbol' und 'id' im Eingabedatensatz.
+    Ergänzt die Spalte 'mexc_pair' basierend auf der MEXC-Paarliste.
+    Nutzt lokale Datei (wenn <24h alt), sonst Live-API.
     """
-    try:
-        mexc_pairs = pd.read_csv("mexc_pairs.csv")
-    except FileNotFoundError:
-        print("⚠️ Datei mexc_pairs.csv nicht gefunden – Mapping übersprungen.")
-        df["mexc_pair"] = None
-        return df
+    path = "snapshots/mexc_pairs.csv"
+    use_live = True
+
+    if os.path.exists(path):
+        mtime = datetime.fromtimestamp(os.path.getmtime(path))
+        age_hours = (datetime.now() - mtime).total_seconds() / 3600
+        if age_hours <= 24:
+            print(f"✅ Verwende gecachte MEXC-Daten ({age_hours:.1f}h alt)")
+            mexc_pairs = pd.read_csv(path)
+            use_live = False
+        else:
+            print(f"⚠️ Cache älter als 24h – hole Live-Daten ...")
+
+    if use_live:
+        try:
+            url = "https://api.mexc.com/api/v3/exchangeInfo"
+            resp = requests.get(url, timeout=10)
+            resp.raise_for_status()
+            data = resp.json()["symbols"]
+            mexc_pairs = pd.DataFrame([
+                {"base": d["baseAsset"], "quote": d["quoteAsset"], "symbol": d["symbol"]}
+                for d in data if d.get("status") == "TRADING"
+            ])
+            os.makedirs("snapshots", exist_ok=True)
+            mexc_pairs.to_csv(path, index=False)
+            print(f"✅ Live MEXC-Daten geladen ({len(mexc_pairs)} Paare) und gecached")
+        except Exception as e:
+            raise ValueError(f"❌ Fehler beim Laden der MEXC API: {e}")
 
     mexc_pairs["base"] = mexc_pairs["base"].str.upper()
     mexc_pairs["quote"] = mexc_pairs["quote"].str.upper()
-
-    # Wir bevorzugen USDT-Paare
     mexc_pairs = mexc_pairs[mexc_pairs["quote"] == "USDT"]
 
     mapping = dict(zip(mexc_pairs["base"], mexc_pairs["symbol"]))
@@ -1956,7 +1979,9 @@ def map_mexc_pairs(df: pd.DataFrame) -> pd.DataFrame:
     df["mexc_pair"] = df["symbol"].map(mapping)
 
     found = df["mexc_pair"].notna().sum()
-    print(f"✅ map_mexc_pairs: {found} gültige MEXC-Paare gemappt")
+    if found == 0:
+        raise ValueError("❌ Keine MEXC-Paare gemappt – Abbruch gemäß REQUIRE_MEXC=1")
+    print(f"✅ map_mexc_pairs: {found} gültige Paare gefunden")
 
     return df
 
