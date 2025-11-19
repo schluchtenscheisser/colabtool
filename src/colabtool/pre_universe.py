@@ -40,7 +40,12 @@ def apply_pre_universe_filters(df_in: pd.DataFrame, min_volume_usd: float = 1_00
     # Basis
     d["market_cap"] = pd.to_numeric(d.get("market_cap"), errors="coerce")
     d["total_volume"] = pd.to_numeric(d.get("total_volume"), errors="coerce")
-    d = d[(d["market_cap"] > 0) & (d["total_volume"] >= float(min_volume_usd))].copy()
+    # Market Cap Range: 100 Mio < MC < 3 Mrd
+    d = d[
+        (d["market_cap"] > 100_000_000) &
+        (d["market_cap"] < 3_000_000_000) &
+        (d["total_volume"] >= float(min_volume_usd))
+    ].copy()
 
     # Heuristiken
     m_stable = d.apply(lambda r: is_stable_like(r.get("name",""), r.get("symbol",""), r.get("id","")), axis=1)
