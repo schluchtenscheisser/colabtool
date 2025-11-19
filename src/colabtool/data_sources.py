@@ -456,12 +456,19 @@ def map_mexc_pairs(df: pd.DataFrame) -> pd.DataFrame:
             df["mexc_pair"] = None
             return df
 
-    # Spalten prüfen
-    expected_cols = {"base", "quote", "symbol"}
-    if not expected_cols.issubset(mexc_pairs.columns):
-        print(f"⚠️ Unerwartete Struktur in MEXC-Daten: {list(mexc_pairs.columns)} – Mapping übersprungen.")
-        df["mexc_pair"] = None
-        return df
+        # Struktur angleichen (z. B. baseAsset -> base)
+        rename_map = {
+            "baseAsset": "base",
+            "quoteAsset": "quote"
+        }
+        mexc_pairs = mexc_pairs.rename(columns=rename_map)
+        
+        # Spalten prüfen
+        expected_cols = {"base", "quote", "symbol"}
+        if not expected_cols.issubset(mexc_pairs.columns):
+            print(f"⚠️ Unerwartete Struktur in MEXC-Daten: {list(mexc_pairs.columns)} – Mapping übersprungen.")
+            df["mexc_pair"] = None
+            return df
 
     mexc_pairs["base"] = mexc_pairs["base"].str.upper()
     mexc_pairs["quote"] = mexc_pairs["quote"].str.upper()
