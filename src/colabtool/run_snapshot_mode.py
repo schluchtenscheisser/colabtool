@@ -82,7 +82,7 @@ def run_snapshot(mode: str = "standard"):
     print(f"✅ compute_feature_block abgeschlossen")
 
     # 3b️⃣ MEXC-Paare mappen (für Breakout-Analysen erforderlich)
-    from colabtool.exchanges import map_mexc_pairs
+    from colabtool.data_sources import map_mexc_pairs
     df = map_mexc_pairs(df)
     if "mexc_pair" not in df.columns or df["mexc_pair"].isna().all():
         raise ValueError("❌ Keine MEXC-Paare gefunden – Breakout-Berechnung nicht möglich.")
