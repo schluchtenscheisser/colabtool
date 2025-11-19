@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 3d959ea145a25b0c3c79ae576da5b6654c9e9fe7_
+_Generated from commit: 3486dbe77e886ff5d5edc02854d52fa0ffb29b1e_
 
 ## pyproject.toml
 
@@ -164,7 +164,7 @@ jobs:
 
 ## src/colabtool/run_snapshot_mode.py
 
-SHA256: `cf2e037fce462ae3d776748e780c66059880149a0626ca0c2bc526573a23b0b4`
+SHA256: `8b9f0575f2dd6c1237cf4d1cd29f63c5394968a848aa8a655a64d5a62cab6cef`
 
 ```python
 """
@@ -251,7 +251,7 @@ def run_snapshot(mode: str = "standard"):
     print(f"✅ compute_feature_block abgeschlossen")
 
     # 3b️⃣ MEXC-Paare mappen (für Breakout-Analysen erforderlich)
-    from colabtool.exchanges import map_mexc_pairs
+    from colabtool.data_sources import map_mexc_pairs
     df = map_mexc_pairs(df)
     if "mexc_pair" not in df.columns or df["mexc_pair"].isna().all():
         raise ValueError("❌ Keine MEXC-Paare gefunden – Breakout-Berechnung nicht möglich.")
