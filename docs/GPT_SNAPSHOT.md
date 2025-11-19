@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: faa7f86ed2e09c21e2277f57e335aa98a4384cb0_
+_Generated from commit: dddddaaa3569a177f885774165af9a6377977741_
 
 ## pyproject.toml
 
@@ -1552,7 +1552,7 @@ def add_buzz_metrics_for_candidates(
 
 ## src/colabtool/data_sources.py
 
-SHA256: `b4254e73f5025ea7dd1b8622e78b2bd37ab5c3c4f07ddb539bdd99b081a9e8b1`
+SHA256: `495db6396e86c53b811e1093da1cc3ac2730f4edc85c666b68ddfe946c81af6c`
 
 ```python
 # modules/data_sources.py
@@ -1960,7 +1960,8 @@ def map_mexc_pairs(df: pd.DataFrame) -> pd.DataFrame:
     """
     Ergänzt die Spalte 'mexc_pair' basierend auf der MEXC-Paarliste.
     Nutzt lokalen Cache (max. 24h alt), sonst Live-API.
-    Unterstützt Fallback auf /defaultSymbols, falls exchangeInfo leer ist.
+    Unterstützt Fallback auf /defaultSymbols und /market/api/v1/symbols.
+    Bricht nicht hart ab, sondern gibt leeres Mapping mit Warnung zurück.
     """
     cache_path = "snapshots/mexc_pairs.csv"
     use_live = True
@@ -1976,57 +1977,61 @@ def map_mexc_pairs(df: pd.DataFrame) -> pd.DataFrame:
             print("⚠️ Cache älter als 24h – hole Live-Daten ...")
 
     if use_live:
+        data = []
         try:
+            # 1️⃣ Versuch: Standard-Endpunkt
             url = "https://api.mexc.com/api/v3/exchangeInfo"
             resp = requests.get(url, timeout=15)
             resp.raise_for_status()
             data = resp.json().get("symbols", [])
-
-            # Fallback, falls exchangeInfo leer ist
             if not data:
                 print("⚠️ exchangeInfo leer – Fallback auf /defaultSymbols ...")
                 resp2 = requests.get("https://api.mexc.com/api/v3/defaultSymbols", timeout=10)
                 resp2.raise_for_status()
                 symbols = resp2.json()
-                data = [{"symbol": s, "base": s.split("_")[0], "quote": s.split("_")[1]} for s in symbols]
+                data = [{"symbol": s, "base": s.split("_")[0], "quote": s.split("_")[1], "status": "TRADING"} for s in symbols]
+            if not data:
+                print("⚠️ /defaultSymbols leer – zweiter Fallback auf /market/api/v1/symbols ...")
+                resp3 = requests.get("https://www.mexc.com/open/api/v2/market/symbols", timeout=10)
+                resp3.raise_for_status()
+                symbols2 = resp3.json().get("data", [])
+                data = [
+                    {"symbol": d.get("symbol"), "base": d.get("symbol").split("_")[0], "quote": d.get("symbol").split("_")[1], "status": "TRADING"}
+                    for d in symbols2 if d.get("symbol")
+                ]
+        except Exception as e:
+            print(f"⚠️ MEXC API-Fehler: {e}")
+            data = []
 
-            mexc_pairs = pd.DataFrame([
-                {
-                    "base": d.get("baseAsset") or d.get("base"),
-                    "quote": d.get("quoteAsset") or d.get("quote"),
-                    "symbol": d.get("symbol").replace("-", "_"),
-                    "status": d.get("status", "TRADING"),
-                }
-                for d in data if d.get("symbol")
-            ])
-
-            # Nur TRADING-Paare
-            mexc_pairs = mexc_pairs[mexc_pairs["status"] == "TRADING"]
-
-            if len(mexc_pairs) == 0:
-                raise ValueError("MEXC API lieferte keine aktiven Paare.")
-
+        if data:
+            mexc_pairs = pd.DataFrame(data)
             os.makedirs("snapshots", exist_ok=True)
             mexc_pairs.to_csv(cache_path, index=False)
             print(f"✅ Live MEXC-Daten geladen ({len(mexc_pairs)} Paare) und gecached")
+        else:
+            print("⚠️ Keine MEXC-Daten gefunden – Mapping übersprungen.")
+            df["mexc_pair"] = None
+            return df
 
-        except Exception as e:
-            raise ValueError(f"❌ Fehler beim Laden der MEXC API: {e}")
+    # Spalten prüfen
+    expected_cols = {"base", "quote", "symbol"}
+    if not expected_cols.issubset(mexc_pairs.columns):
+        print(f"⚠️ Unerwartete Struktur in MEXC-Daten: {list(mexc_pairs.columns)} – Mapping übersprungen.")
+        df["mexc_pair"] = None
+        return df
 
     mexc_pairs["base"] = mexc_pairs["base"].str.upper()
     mexc_pairs["quote"] = mexc_pairs["quote"].str.upper()
-    mexc_pairs = mexc_pairs[mexc_pairs["quote"] == "USDT"]
+    mexc_pairs = mexc_pairs[mexc_pairs["quote"].isin(["USDT", "USDC"])]
 
     mapping = dict(zip(mexc_pairs["base"], mexc_pairs["symbol"]))
     df["symbol"] = df["symbol"].str.upper()
     df["mexc_pair"] = df["symbol"].map(mapping)
 
     found = df["mexc_pair"].notna().sum()
-    if found == 0:
-        raise ValueError("❌ Keine MEXC-Paare gemappt – Abbruch gemäß REQUIRE_MEXC=1")
-
     print(f"✅ map_mexc_pairs: {found} gültige Paare gefunden")
     return df
+
 
 
 
