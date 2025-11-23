@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: c8036b3a1df8afa9143f52a7ea1d9734d132e959_
+_Generated from commit: 558d4e2df9f4e4b167c6bb649b8483725daada4a_
 
 ## pyproject.toml
 
@@ -164,7 +164,7 @@ jobs:
 
 ## src/colabtool/run_snapshot_mode.py
 
-SHA256: `6f4aaad167b7a4fe2f322206ca2e6acadb9114069d3bdac7e9c44ad136b22b1e`
+SHA256: `ff1b7e6f34177dd2cb0d67c3a3068a7aeb840d65d1ec44f560150e88f0473947`
 
 ```python
 """
@@ -281,19 +281,15 @@ def run_snapshot(mode: str = "standard"):
     # 8️⃣ Vollständigen DataFrame für Export vorbereiten
     full_df = make_fulldata(df)
 
-    # 9️⃣ Excel-Export – jetzt erzwingen wir xlsxwriter für volle Formatierung
+    # 9️⃣ Excel-Export
     export_filename = f"{ASOF_DATE}_fullsnapshot.xlsx"
     export_path = os.path.join("snapshots", export_filename)
     os.makedirs("snapshots", exist_ok=True)
 
     print(f"📦 Erzeuge Excel: {export_path}")
 
-    # Haupt-Excel mit Rankings und FullData erzeugen
-    create_full_excel_export(full_df, export_path)
-
-    # Backtest nachträglich anhängen – immer mit xlsxwriter-Engine
-    with pd.ExcelWriter(export_path, engine="xlsxwriter", mode="a") as writer:
-        write_sheet(backtest_results, "Backtest", writer)
+    # Excel mit allen Rankings + Backtest erzeugen (alles in einem Schreibvorgang)
+    create_full_excel_export(full_df, export_path, extra_sheets={"Backtest": backtest_results})
 
     print(f"🎯 Snapshot abgeschlossen → {export_path}")
     return export_path
