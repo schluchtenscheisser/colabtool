@@ -183,13 +183,25 @@ import os
 import requests
 from datetime import datetime, timedelta
 
+# === Globale Pfade ===
+def _get_snapshot_dir() -> str:
+    """Erzeugt und gibt das Tagesverzeichnis unter snapshots/YYYYMMDD zurück."""
+    today = datetime.today().strftime("%Y%m%d")
+    path = os.path.join("snapshots", today)
+    os.makedirs(path, exist_ok=True)
+    return path
+
+def _make_cache_path(filename: str) -> str:
+    """Erzeugt einen absoluten Pfad im Tagesverzeichnis."""
+    return os.path.join(_get_snapshot_dir(), filename)
+
 def cg_markets(vs: str = "usd", pages: int = 4, cache_hours: int = 24) -> pd.DataFrame:
     """
     Lädt CoinGecko-Markt-Daten mit automatischem Cache-Mechanismus.
     - nutzt lokalen Cache (snapshots/cg_markets.csv), wenn <cache_hours alt
     - sonst lädt Live-Daten von der CoinGecko API
     """
-    cache_path = "snapshots/cg_markets.csv"
+    cache_path = _make_cache_path("cg_markets.csv")
     use_live = True
 
     # === 1️⃣ Cache prüfen ===
@@ -311,7 +323,7 @@ def update_seen_ids(ids: List[str]) -> Dict[str, int]:
 # ----------------------------
 def _chart_cache_path(coin_id: str, vs: str, days: int, interval: str) -> Path:
     fn = f"cg_chart_{coin_id}_{vs}_{days}_{interval}.json".replace("/", "_")
-    p = _CACHE_DIR / fn
+    p = Path(_make_cache_path(fn))
     try:
         p.parent.mkdir(parents=True, exist_ok=True)
     except Exception:
@@ -406,7 +418,7 @@ def map_mexc_pairs(df: pd.DataFrame) -> pd.DataFrame:
     Unterstützt Fallback auf /defaultSymbols und /market/api/v1/symbols.
     Bricht nicht hart ab, sondern gibt leeres Mapping mit Warnung zurück.
     """
-    cache_path = "snapshots/mexc_pairs.csv"
+    cache_path = _make_cache_path("mexc_pairs.csv")
     use_live = True
 
     if os.path.exists(cache_path):
@@ -481,6 +493,10 @@ def map_mexc_pairs(df: pd.DataFrame) -> pd.DataFrame:
     found = df["mexc_pair"].notna().sum()
     print(f"✅ map_mexc_pairs: {found} gültige Paare gefunden")
     return df
-
-
-
+    
+def ensure_seed_alias_exists():
+    #Sorgt dafür, dass im aktuellen Snapshot-Verzeichnis eine seed_alias.csv liegt.
+    alias_path = _make_cache_path("seed_alias.csv")
+    if not os.path.exists(alias_path):
+        pd.DataFrame(columns=["alias", "coin_id"]).to_csv(alias_path, index=False)
+        print(f"⚠️ seed_alias.csv neu erstellt → {alias_path}")
