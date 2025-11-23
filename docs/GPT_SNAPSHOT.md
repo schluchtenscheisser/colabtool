@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 18f636f3bea001aebbaaa1e15ebe02e63ee6450a_
+_Generated from commit: 3449e54714e70f5c5589c7407630730456192815_
 
 ## pyproject.toml
 
@@ -306,7 +306,7 @@ if __name__ == "__main__":
 
 ## src/colabtool/export.py
 
-SHA256: `19ec7967362ee762ab7b71a4199f43625da7f2b5d0d8faf4db8ec8abb00aa849`
+SHA256: `85b98f2cc443b616fae31e68f2c0c2f90617a13b14efbf38f74074fec95049b3`
 
 ```python
 from __future__ import annotations
@@ -338,6 +338,7 @@ def _safe_col_width(s: pd.Series) -> int:
         return max(_DEF_MIN, min(_DEF_MAX, s.astype(str).str.len().max()))
     return max(_DEF_MIN, min(_DEF_MAX, s.astype(str).str.len().max()))
 
+
 def reorder_columns(df: pd.DataFrame) -> pd.DataFrame:
     fixed_order = [
         "id", "symbol", "name", "market_cap", "score_global",
@@ -346,6 +347,7 @@ def reorder_columns(df: pd.DataFrame) -> pd.DataFrame:
     available = [col for col in fixed_order if col in df.columns]
     remaining = [col for col in df.columns if col not in available]
     return df[available + remaining]
+
 
 def write_sheet(df: pd.DataFrame, name: str, writer) -> None:
     df = df.copy()
@@ -356,18 +358,31 @@ def write_sheet(df: pd.DataFrame, name: str, writer) -> None:
     df.to_excel(writer, sheet_name=name, index=False)
     worksheet = writer.sheets[name]
 
-    # Formate
-    fmt_thousands = writer.book.add_format({"num_format": "#,##0", "align": "right"})
-    fmt_percent = writer.book.add_format({"num_format": "0.00%", "align": "right"})
+    # Formatierung – jetzt robust gegen openpyxl / xlsxwriter
+    fmt_thousands = None
+    fmt_percent = None
+    try:
+        if hasattr(writer, "book") and hasattr(writer.book, "add_format"):
+            fmt_thousands = writer.book.add_format({"num_format": "#,##0", "align": "right"})
+            fmt_percent = writer.book.add_format({"num_format": "0.00%", "align": "right"})
+    except Exception as ex:
+        print(f"⚠️ Formatierungswarnung (non-fatal): {ex}")
 
     for idx, col in enumerate(df.columns):
         width = _safe_col_width(df[col])
         if col in ("market_cap", "total_volume"):
-            worksheet.set_column(idx, idx, width, fmt_thousands)
+            if fmt_thousands:
+                worksheet.set_column(idx, idx, width, fmt_thousands)
+            else:
+                worksheet.set_column(idx, idx, width)
         elif col in ("mom_7d_pct", "mom_30d_pct"):
-            worksheet.set_column(idx, idx, width, fmt_percent)
+            if fmt_percent:
+                worksheet.set_column(idx, idx, width, fmt_percent)
+            else:
+                worksheet.set_column(idx, idx, width)
         else:
             worksheet.set_column(idx, idx, width)
+
 
 def write_meta_sheet(writer, meta: Dict[str, Any]) -> None:
     meta_df = pd.DataFrame.from_dict(meta, orient="index", columns=["Value"])
@@ -377,6 +392,7 @@ def write_meta_sheet(writer, meta: Dict[str, Any]) -> None:
     worksheet = writer.sheets["Meta"]
     worksheet.set_column(0, 0, 40)
     worksheet.set_column(1, 1, 80)
+
 
 def create_full_excel_export(df: pd.DataFrame, output_path: str) -> None:
     """
@@ -391,12 +407,14 @@ def create_full_excel_export(df: pd.DataFrame, output_path: str) -> None:
     top10_hidden = df[df["market_cap"] <= 150_000_000].sort_values("score_global", ascending=False).head(10)
 
     # Top10 Emerging (150–500 Mio)
-    top10_emerging = df[(df["market_cap"] > 150_000_000) & (df["market_cap"] <= 500_000_000)].sort_values("score_global", ascending=False).head(10)
+    top10_emerging = df[
+        (df["market_cap"] > 150_000_000) & (df["market_cap"] <= 500_000_000)
+    ].sort_values("score_global", ascending=False).head(10)
 
     # Top25 Early Signals
     top25_early = df.sort_values("early_score", ascending=False).head(25)
 
-    # Writer öffnen
+    # Excel schreiben
     with pd.ExcelWriter(output_path, engine="xlsxwriter") as writer:
         write_sheet(top25_global, "Top25_Global", writer)
         write_sheet(top10_hidden, "Top10_HiddenGem", writer)
@@ -406,7 +424,6 @@ def create_full_excel_export(df: pd.DataFrame, output_path: str) -> None:
         write_meta_sheet(writer, {"generated": pd.Timestamp.now()})
 
     print(f"✅ Excel exportiert: {output_path}")
-
 
 ```
 
