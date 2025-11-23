@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 1b4de3bc1a952a847f26ce575a0da22cada3453d_
+_Generated from commit: b9e71bd42acfc59e1f36ad9fcba03a5609d74f45_
 
 ## pyproject.toml
 
@@ -164,7 +164,7 @@ jobs:
 
 ## src/colabtool/run_snapshot_mode.py
 
-SHA256: `3131703cccc0fb325fae776038210e0890c619ca25c4ad6892a61a411df9f079`
+SHA256: `15b8da0d6c40702052b749366285520328311c2226b3dabcb87fe5bde29d8435`
 
 ```python
 """
@@ -252,7 +252,8 @@ def run_snapshot(mode: str = "standard"):
     print(f"✅ map_mexc_pairs abgeschlossen")
 
     # 5️⃣ Breakouts
-    df = compute_breakout_for_ids(df)
+    cand_ids = df["id"].tolist()
+    df = compute_breakout_for_ids(df, cand_ids)
     print(f"✅ compute_breakout_for_ids abgeschlossen")
 
     # 6️⃣ Buzz
