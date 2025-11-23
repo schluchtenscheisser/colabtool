@@ -83,7 +83,8 @@ def run_snapshot(mode: str = "standard"):
     print(f"✅ map_mexc_pairs abgeschlossen")
 
     # 5️⃣ Breakouts
-    df = compute_breakout_for_ids(df)
+    cand_ids = df["id"].tolist()
+    df = compute_breakout_for_ids(df, cand_ids)
     print(f"✅ compute_breakout_for_ids abgeschlossen")
 
     # 6️⃣ Buzz
