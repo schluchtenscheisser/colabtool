@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 3449e54714e70f5c5589c7407630730456192815_
+_Generated from commit: 242fd541e804a2bfcabce416431ec438e9e2a046_
 
 ## pyproject.toml
 
@@ -306,7 +306,7 @@ if __name__ == "__main__":
 
 ## src/colabtool/export.py
 
-SHA256: `85b98f2cc443b616fae31e68f2c0c2f90617a13b14efbf38f74074fec95049b3`
+SHA256: `d0ec66c16638aff6b9427fef542dd5756b0f3c7c9382a3e6582977de99444b68`
 
 ```python
 from __future__ import annotations
@@ -358,7 +358,7 @@ def write_sheet(df: pd.DataFrame, name: str, writer) -> None:
     df.to_excel(writer, sheet_name=name, index=False)
     worksheet = writer.sheets[name]
 
-    # Formatierung – jetzt robust gegen openpyxl / xlsxwriter
+    # Formatierung – robust gegen openpyxl / xlsxwriter
     fmt_thousands = None
     fmt_percent = None
     try:
@@ -368,20 +368,26 @@ def write_sheet(df: pd.DataFrame, name: str, writer) -> None:
     except Exception as ex:
         print(f"⚠️ Formatierungswarnung (non-fatal): {ex}")
 
+    # Prüfen, ob wir xlsxwriter oder openpyxl verwenden
+    use_xlsxwriter = hasattr(worksheet, "set_column")
+
     for idx, col in enumerate(df.columns):
         width = _safe_col_width(df[col])
-        if col in ("market_cap", "total_volume"):
-            if fmt_thousands:
+        if use_xlsxwriter:
+            # xlsxwriter kann Formatierungen direkt anwenden
+            if col in ("market_cap", "total_volume"):
                 worksheet.set_column(idx, idx, width, fmt_thousands)
-            else:
-                worksheet.set_column(idx, idx, width)
-        elif col in ("mom_7d_pct", "mom_30d_pct"):
-            if fmt_percent:
+            elif col in ("mom_7d_pct", "mom_30d_pct"):
                 worksheet.set_column(idx, idx, width, fmt_percent)
             else:
                 worksheet.set_column(idx, idx, width)
         else:
-            worksheet.set_column(idx, idx, width)
+            # openpyxl-Fallback: Spaltenbreite manuell setzen
+            try:
+                col_letter = worksheet.cell(row=1, column=idx + 1).column_letter
+                worksheet.column_dimensions[col_letter].width = width
+            except Exception as ex:
+                print(f"⚠️ Spaltenbreite konnte nicht gesetzt werden ({col}): {ex}")
 
 
 def write_meta_sheet(writer, meta: Dict[str, Any]) -> None:
@@ -389,6 +395,7 @@ def write_meta_sheet(writer, meta: Dict[str, Any]) -> None:
     meta_df.reset_index(inplace=True)
     meta_df.columns = ["Key", "Value"]
     meta_df.to_excel(writer, sheet_name="Meta", index=False)
+    
     worksheet = writer.sheets["Meta"]
     worksheet.set_column(0, 0, 40)
     worksheet.set_column(1, 1, 80)
