@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: b9e71bd42acfc59e1f36ad9fcba03a5609d74f45_
+_Generated from commit: 8f17e13bced530d5132d31b400af96f066702f62_
 
 ## pyproject.toml
 
@@ -164,7 +164,7 @@ jobs:
 
 ## src/colabtool/run_snapshot_mode.py
 
-SHA256: `15b8da0d6c40702052b749366285520328311c2226b3dabcb87fe5bde29d8435`
+SHA256: `42ba1f7f3c62122964b9e8f0f6f3590240e2883e4fb430b203753392fa485674`
 
 ```python
 """
@@ -269,7 +269,7 @@ def run_snapshot(mode: str = "standard"):
     validate_scores(df)
 
     # 9️⃣ Backtest
-    backtest_results = backtest_on_snapshot(df, top_k=20, horizontes=[20, 40, 60])
+    backtest_results = backtest_on_snapshot(df, top_k=20, horizons=[20, 40, 60])
     print(f"✅ Backtest abgeschlossen ({len(backtest_results)} Zeilen)")
 
     # 🔟 Volldatensatz für Export vorbereiten
