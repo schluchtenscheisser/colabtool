@@ -17,7 +17,7 @@ def _safe_col_width(s: pd.Series) -> int:
     if s is None or s.empty:
         return _DEF_FALLBACK
     if is_numeric_dtype(s):
-        formatted = [len(f"{v:,.2f}") for v in s if pd.notna(v)]
+        formatted = [len(f"{v:.2f}") for v in s if pd.notna(v)]
         if not formatted:
             return _DEF_FALLBACK
         return max(_DEF_MIN, min(_DEF_MAX, int(np.nanmean(formatted) + 2)))
@@ -26,7 +26,6 @@ def _safe_col_width(s: pd.Series) -> int:
     if is_categorical_dtype(s):
         return max(_DEF_MIN, min(_DEF_MAX, s.astype(str).str.len().max()))
     return max(_DEF_MIN, min(_DEF_MAX, s.astype(str).str.len().max()))
-
 
 def reorder_columns(df: pd.DataFrame) -> pd.DataFrame:
     fixed_order = [
@@ -37,7 +36,6 @@ def reorder_columns(df: pd.DataFrame) -> pd.DataFrame:
     remaining = [col for col in df.columns if col not in available]
     return df[available + remaining]
 
-
 def write_sheet(df: pd.DataFrame, name: str, writer) -> None:
     df = df.copy()
     df = reorder_columns(df)
@@ -47,7 +45,6 @@ def write_sheet(df: pd.DataFrame, name: str, writer) -> None:
     df.to_excel(writer, sheet_name=name, index=False)
     worksheet = writer.sheets[name]
 
-    # Formatierung – robust gegen openpyxl / xlsxwriter
     fmt_thousands = None
     fmt_percent = None
     try:
@@ -57,13 +54,11 @@ def write_sheet(df: pd.DataFrame, name: str, writer) -> None:
     except Exception as ex:
         print(f"⚠️ Formatierungswarnung (non-fatal): {ex}")
 
-    # Prüfen, ob wir xlsxwriter oder openpyxl verwenden
     use_xlsxwriter = hasattr(worksheet, "set_column")
 
     for idx, col in enumerate(df.columns):
         width = _safe_col_width(df[col])
         if use_xlsxwriter:
-            # xlsxwriter kann Formatierungen direkt anwenden
             if col in ("market_cap", "total_volume"):
                 worksheet.set_column(idx, idx, width, fmt_thousands)
             elif col in ("mom_7d_pct", "mom_30d_pct"):
@@ -71,46 +66,34 @@ def write_sheet(df: pd.DataFrame, name: str, writer) -> None:
             else:
                 worksheet.set_column(idx, idx, width)
         else:
-            # openpyxl-Fallback: Spaltenbreite manuell setzen
             try:
                 col_letter = worksheet.cell(row=1, column=idx + 1).column_letter
                 worksheet.column_dimensions[col_letter].width = width
             except Exception as ex:
                 print(f"⚠️ Spaltenbreite konnte nicht gesetzt werden ({col}): {ex}")
 
-
 def write_meta_sheet(writer, meta: Dict[str, Any]) -> None:
     meta_df = pd.DataFrame.from_dict(meta, orient="index", columns=["Value"])
     meta_df.reset_index(inplace=True)
     meta_df.columns = ["Key", "Value"]
     meta_df.to_excel(writer, sheet_name="Meta", index=False)
-    
     worksheet = writer.sheets["Meta"]
     worksheet.set_column(0, 0, 40)
     worksheet.set_column(1, 1, 80)
 
-
-def create_full_excel_export(df: pd.DataFrame, output_path: str) -> None:
+def create_full_excel_export(df: pd.DataFrame, output_path: str, extra_sheets: dict[str, pd.DataFrame] | None = None) -> None:
     """
-    Erstellt vollständigen Excel-Export mit Top-Listen und Metadaten.
+    Erstellt vollständigen Excel-Export mit Rankings, FullData und optionalen Zusatz-Sheets (z.B. Backtest).
     """
     print(f"📊 Erzeuge Excel mit Rankings → {output_path}")
 
-    # Top25 Global nach Score
     top25_global = df.sort_values("score_global", ascending=False).head(25)
-
-    # Top10 Hidden Gems (MarketCap ≤ 150 Mio)
     top10_hidden = df[df["market_cap"] <= 150_000_000].sort_values("score_global", ascending=False).head(10)
-
-    # Top10 Emerging (150–500 Mio)
     top10_emerging = df[
         (df["market_cap"] > 150_000_000) & (df["market_cap"] <= 500_000_000)
     ].sort_values("score_global", ascending=False).head(10)
-
-    # Top25 Early Signals
     top25_early = df.sort_values("early_score", ascending=False).head(25)
 
-    # Excel schreiben
     with pd.ExcelWriter(output_path, engine="xlsxwriter") as writer:
         write_sheet(top25_global, "Top25_Global", writer)
         write_sheet(top10_hidden, "Top10_HiddenGem", writer)
@@ -118,5 +101,11 @@ def create_full_excel_export(df: pd.DataFrame, output_path: str) -> None:
         write_sheet(top25_early, "Top25_EarlySignals", writer)
         write_sheet(df, "FullData", writer)
         write_meta_sheet(writer, {"generated": pd.Timestamp.now()})
+
+        # 🔹 Neue Logik: optionale Zusatz-Sheets (z. B. Backtest)
+        if extra_sheets:
+            for sheet_name, sheet_df in extra_sheets.items():
+                if sheet_df is not None and not sheet_df.empty:
+                    write_sheet(sheet_df, sheet_name, writer)
 
     print(f"✅ Excel exportiert: {output_path}")
