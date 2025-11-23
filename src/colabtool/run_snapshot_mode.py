@@ -100,7 +100,7 @@ def run_snapshot(mode: str = "standard"):
     validate_scores(df)
 
     # 9️⃣ Backtest
-    backtest_results = backtest_on_snapshot(df, top_k=20, horizontes=[20, 40, 60])
+    backtest_results = backtest_on_snapshot(df, top_k=20, horizons=[20, 40, 60])
     print(f"✅ Backtest abgeschlossen ({len(backtest_results)} Zeilen)")
 
     # 🔟 Volldatensatz für Export vorbereiten
