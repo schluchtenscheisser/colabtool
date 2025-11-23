@@ -112,19 +112,15 @@ def run_snapshot(mode: str = "standard"):
     # 8️⃣ Vollständigen DataFrame für Export vorbereiten
     full_df = make_fulldata(df)
 
-    # 9️⃣ Excel-Export – jetzt erzwingen wir xlsxwriter für volle Formatierung
+    # 9️⃣ Excel-Export
     export_filename = f"{ASOF_DATE}_fullsnapshot.xlsx"
     export_path = os.path.join("snapshots", export_filename)
     os.makedirs("snapshots", exist_ok=True)
 
     print(f"📦 Erzeuge Excel: {export_path}")
 
-    # Haupt-Excel mit Rankings und FullData erzeugen
-    create_full_excel_export(full_df, export_path)
-
-    # Backtest nachträglich anhängen – immer mit xlsxwriter-Engine
-    with pd.ExcelWriter(export_path, engine="xlsxwriter", mode="a") as writer:
-        write_sheet(backtest_results, "Backtest", writer)
+    # Excel mit allen Rankings + Backtest erzeugen (alles in einem Schreibvorgang)
+    create_full_excel_export(full_df, export_path, extra_sheets={"Backtest": backtest_results})
 
     print(f"🎯 Snapshot abgeschlossen → {export_path}")
     return export_path
