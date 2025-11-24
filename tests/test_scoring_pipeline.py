@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from src.colabtool.scores import score_block, compute_early_score
+from colabtool.scores import score_block, compute_early_score
 
 def make_mock_df():
     np.random.seed(42)
