@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 5a045434147bfd461e5bc44449d5cac22309bcb4_
+_Generated from commit: 568a7082861afc71b9d32f28a6806d37c3b22abe_
 
 ## pyproject.toml
 
@@ -312,7 +312,7 @@ if __name__ == "__main__":
 
 ## src/colabtool/export.py
 
-SHA256: `a4a8c47e3552f4bf2a5837c0339ee70eae5072c374430f049b0535dcc699a263`
+SHA256: `bf38757be5fa156ffae186f6f6b7756a3a296afe9cf2168fd04ebe400c88b325`
 
 ```python
 from __future__ import annotations
@@ -330,6 +330,10 @@ _DEF_FALLBACK = 12
 
 EXPORT_PATH = "/content/drive/MyDrive/Colab results"
 
+
+# -----------------------------------------------------
+# Hilfsfunktionen für Spaltenformatierung
+# -----------------------------------------------------
 def _safe_col_width(s: pd.Series) -> int:
     if s is None or s.empty:
         return _DEF_FALLBACK
@@ -344,20 +348,41 @@ def _safe_col_width(s: pd.Series) -> int:
         return max(_DEF_MIN, min(_DEF_MAX, s.astype(str).str.len().max()))
     return max(_DEF_MIN, min(_DEF_MAX, s.astype(str).str.len().max()))
 
+
+# -----------------------------------------------------
+# Spalten-Reihenfolge (fixiert Score-Spalten frühzeitig)
+# -----------------------------------------------------
 def reorder_columns(df: pd.DataFrame) -> pd.DataFrame:
     fixed_order = [
-        "id", "symbol", "name", "market_cap", "score_global",
-        "total_volume", "Kategorie", "Segment", "score_segment"
+        "id", "symbol", "name", "market_cap",
+        "score_global", "score_segment", "early_score",
+        "total_volume", "Kategorie", "Segment"
     ]
     available = [col for col in fixed_order if col in df.columns]
     remaining = [col for col in df.columns if col not in available]
     return df[available + remaining]
 
+
+# -----------------------------------------------------
+# Haupt-Exportsheet
+# -----------------------------------------------------
 def write_sheet(df: pd.DataFrame, name: str, writer) -> None:
     df = df.copy()
     df = reorder_columns(df)
+
+    # Sicherstellen, dass Score-Spalten existieren
+    required_cols = ["score_global", "score_segment", "early_score"]
+    for col in required_cols:
+        if col not in df.columns:
+            logging.warning(f"⚠️ Spalte {col} fehlt im Export – wird mit NaN ergänzt.")
+            df[col] = np.nan
+
+    # Sortierung nach globalem Score, falls vorhanden
     if "score_global" in df.columns:
-        df = df.sort_values("score_global", ascending=False)
+        try:
+            df = df.sort_values("score_global", ascending=False)
+        except Exception as ex:
+            logging.warning(f"⚠️ Sortierung nach score_global fehlgeschlagen: {ex}")
 
     df.to_excel(writer, sheet_name=name, index=False)
     worksheet = writer.sheets[name]
@@ -389,6 +414,10 @@ def write_sheet(df: pd.DataFrame, name: str, writer) -> None:
             except Exception as ex:
                 print(f"⚠️ Spaltenbreite konnte nicht gesetzt werden ({col}): {ex}")
 
+
+# -----------------------------------------------------
+# Meta-Sheet
+# -----------------------------------------------------
 def write_meta_sheet(writer, meta: Dict[str, Any]) -> None:
     meta_df = pd.DataFrame.from_dict(meta, orient="index", columns=["Value"])
     meta_df.reset_index(inplace=True)
@@ -398,12 +427,28 @@ def write_meta_sheet(writer, meta: Dict[str, Any]) -> None:
     worksheet.set_column(0, 0, 40)
     worksheet.set_column(1, 1, 80)
 
-def create_full_excel_export(df: pd.DataFrame, output_path: str, extra_sheets: dict[str, pd.DataFrame] | None = None) -> None:
-    """
-    Erstellt vollständigen Excel-Export mit Rankings, FullData und optionalen Zusatz-Sheets (z.B. Backtest).
-    """
-    print(f"📊 Erzeuge Excel mit Rankings → {output_path}")
 
+# -----------------------------------------------------
+# Vollständiger Excel-Export (inkl. Zusatz-Sheets)
+# -----------------------------------------------------
+def create_full_excel_export(
+    df: pd.DataFrame,
+    output_path: str,
+    extra_sheets: dict[str, pd.DataFrame] | None = None
+) -> None:
+    """
+    Erstellt vollständigen Excel-Export mit Rankings, FullData und optionalen Zusatz-Sheets (z. B. Backtest).
+    """
+    logging.info(f"📊 Erzeuge Excel mit Rankings → {output_path}")
+
+    # Sicherstellen, dass Score-Spalten existieren
+    required_cols = ["score_global", "score_segment", "early_score"]
+    for col in required_cols:
+        if col not in df.columns:
+            logging.warning(f"⚠️ Spalte {col} fehlt in DataFrame – wird mit NaN ergänzt.")
+            df[col] = np.nan
+
+    # Rankings
     top25_global = df.sort_values("score_global", ascending=False).head(25)
     top10_hidden = df[df["market_cap"] <= 150_000_000].sort_values("score_global", ascending=False).head(10)
     top10_emerging = df[
@@ -411,6 +456,7 @@ def create_full_excel_export(df: pd.DataFrame, output_path: str, extra_sheets: d
     ].sort_values("score_global", ascending=False).head(10)
     top25_early = df.sort_values("early_score", ascending=False).head(25)
 
+    # Excel exportieren
     with pd.ExcelWriter(output_path, engine="xlsxwriter") as writer:
         write_sheet(top25_global, "Top25_Global", writer)
         write_sheet(top10_hidden, "Top10_HiddenGem", writer)
@@ -419,13 +465,13 @@ def create_full_excel_export(df: pd.DataFrame, output_path: str, extra_sheets: d
         write_sheet(df, "FullData", writer)
         write_meta_sheet(writer, {"generated": pd.Timestamp.now()})
 
-        # 🔹 Neue Logik: optionale Zusatz-Sheets (z. B. Backtest)
+        # 🔹 Zusatz-Sheets (z. B. Backtest)
         if extra_sheets:
             for sheet_name, sheet_df in extra_sheets.items():
                 if sheet_df is not None and not sheet_df.empty:
                     write_sheet(sheet_df, sheet_name, writer)
 
-    print(f"✅ Excel exportiert: {output_path}")
+    logging.info(f"✅ Excel erfolgreich exportiert: {output_path}")
 
 ```
 
