@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 86a34c8905220fc704da72c66183d01f38aba5ae_
+_Generated from commit: 046f23838620af4d1e1130c0a6cdb57af8f80a64_
 
 ## pyproject.toml
 
@@ -1625,7 +1625,7 @@ def add_buzz_metrics_for_candidates(
 
 ## src/colabtool/data_sources.py
 
-SHA256: `39c2308e794c0aa42e3069b9467963731c5a30f93fb414a623854f7dd10cb99f`
+SHA256: `50fc9644b002683d552c105fab8e477e009692a9a358f4c14066cff1fa4279b4`
 
 ```python
 # modules/data_sources.py
@@ -1873,6 +1873,17 @@ def cg_markets(vs: str = "usd", pages: int = 4, cache_hours: int = 24) -> pd.Dat
         print(f"✅ Live CoinGecko-Daten geladen ({len(df)} Einträge) und gecached")
 
     # === 3️⃣ Nachbearbeitung ===
+    # 🩹 Fix: Sicherstellen, dass total_volume existiert (CoinGecko API-Fallback)
+    if "total_volume" not in df.columns:
+        alt_cols = [c for c in df.columns if "volume" in c.lower()]
+        if alt_cols:
+            logging.warning(f"⚠️ 'total_volume' nicht gefunden – verwende Ersatzspalte '{alt_cols[0]}'")
+            df["total_volume"] = df[alt_cols[0]]
+        else:
+            logging.warning("⚠️ 'total_volume' fehlt vollständig – setze Platzhalterwerte (0)")
+            df["total_volume"] = 0
+    
+    
     # Entferne Coins ohne Market Cap oder Volume
     df = df[df["market_cap"].notna() & df["total_volume"].notna()]
     print(f"[INFO] cg_markets: {len(df)} valide Coins nach Filterung")
