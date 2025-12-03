@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 046f23838620af4d1e1130c0a6cdb57af8f80a64_
+_Generated from commit: 28b3d146cf271063face55c8ec505ba494ce07f4_
 
 ## pyproject.toml
 
@@ -1625,7 +1625,7 @@ def add_buzz_metrics_for_candidates(
 
 ## src/colabtool/data_sources.py
 
-SHA256: `50fc9644b002683d552c105fab8e477e009692a9a358f4c14066cff1fa4279b4`
+SHA256: `9e84a3e82d3697514a1f2d00997d588d802d5e0db9b06da816f3cf07e70948c9`
 
 ```python
 # modules/data_sources.py
@@ -2062,6 +2062,16 @@ def map_mexc_pairs(df: pd.DataFrame) -> pd.DataFrame:
     cache_path = _make_cache_path("mexc_pairs.csv")
     use_live = True
 
+    # 🩹 Fix: Sicherstellen, dass MEXC-Pairs die Spalte 'base' enthalten
+    if "base" not in mexc_pairs.columns:
+        alt_cols = [c for c in mexc_pairs.columns if c.lower() in ("base_coin", "currency", "symbol")]
+        if alt_cols:
+            logging.warning(f"⚠️ 'base' nicht gefunden – verwende Ersatzspalte '{alt_cols[0]}'")
+            mexc_pairs["base"] = mexc_pairs[alt_cols[0]]
+        else:
+            logging.warning("⚠️ 'base'-Spalte fehlt vollständig – setze Dummy-Werte.")
+            mexc_pairs["base"] = "UNKNOWN"
+    
     if os.path.exists(cache_path):
         mtime = datetime.fromtimestamp(os.path.getmtime(cache_path))
         age_hours = (datetime.now() - mtime).total_seconds() / 3600
