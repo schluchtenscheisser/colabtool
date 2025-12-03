@@ -59,90 +59,107 @@ def _align_bool_mask(mask_in, idx) -> pd.Series:
     except Exception:
         return pd.Series([False] * len(idx), index=idx, dtype="bool")
 
-# ----------------------------
-# Global/Segment Score (Basis)
-# ----------------------------
-def score_block(df_in: pd.DataFrame, regime_info: Optional[dict] = None) -> pd.DataFrame:
-    d = df_in.copy()
-    d["market_cap"] = pd.to_numeric(d.get("market_cap"), errors="coerce")
-    d["mc_bucket"] = _mc_bucket(d["market_cap"])
+# ================================================================
+# 🧠 SCORE_BLOCK – Global & Segment Scoring mit Regime und Dämpfung
+# ================================================================
+def score_block(df_in: pd.DataFrame, regime_info: dict | None = None) -> pd.DataFrame:
+    """
+    Berechnet den globalen und segmentbasierten Score für alle Assets.
+    Nutzt Z-Norm-Werte aus Momentum, Volumen, Drawdown und Breakout.
+    Regime-Logik & Beta-Dämpfung integriert.
+    """
+    df = df_in.copy()
 
-    mom30 = _safe_num(d, "price_change_percentage_30d_in_currency", 0.0)
-    mom7  = _safe_num(d, "price_change_percentage_7d_in_currency", 0.0)
-    vmc   = _safe_num(d, "volume_mc_ratio", np.nan)
-    dd    = _safe_num(d, "ath_change_percentage", np.nan)
+    # ------------------------------------------------------------
+    # Sicherstellen, dass benötigte Felder existieren
+    # ------------------------------------------------------------
+    required_cols = [
+        "mom_7d_pct", "mom_30d_pct", "volume_mc_ratio",
+        "ath_drawdown_pct", "beta_btc", "beta_eth"
+    ]
+    for col in required_cols:
+        if col not in df.columns:
+            df[col] = np.nan
 
-    z_mom30 = _z_by_bucket(mom30, d["mc_bucket"])
-    z_mom7  = _z_by_bucket(mom7, d["mc_bucket"])
-    z_vmc   = _z_by_bucket(vmc, d["mc_bucket"])
-    z_dd    = _z_by_bucket(dd, d["mc_bucket"])
+    # ------------------------------------------------------------
+    # Z-Normalisierung mit Winsorizing
+    # ------------------------------------------------------------
+    def _z(series: pd.Series) -> pd.Series:
+        if series.std(ddof=0) == 0 or series.isna().all():
+            return pd.Series(0, index=series.index)
+        z = (series - series.mean()) / (series.std(ddof=0) + 1e-9)
+        return np.clip(z, -2.5, 2.5)
 
-    score_global = 0.40 * z_mom30 + 0.25 * z_mom7 + 0.25 * z_vmc - 0.10 * z_dd
-    d["score_global"] = score_global.fillna(0.0)
-    d["score_segment"] = d["score_global"]
-    return d
+    df["z_mom7"] = _z(df["mom_7d_pct"])
+    df["z_mom30"] = _z(df["mom_30d_pct"])
+    df["z_vmc"] = _z(df["volume_mc_ratio"])
+    df["z_dd"] = -_z(df["ath_drawdown_pct"].abs())  # stärkerer Drawdown = negativer Score
 
-# ----------------------------
-# Early Score
-# ----------------------------
-def compute_early_score(df_in: pd.DataFrame, peg_mask: Optional[pd.Series] = None, regime_info: Optional[dict] = None) -> pd.DataFrame:
-    """Early-Score inkl. Auditspalten risk_regime und beta_pen."""
-    d = df_in.copy()
-    idx = d.index
+    # ------------------------------------------------------------
+    # Regime- & Beta-Dämpfung
+    # ------------------------------------------------------------
+    # Berechne Beta-Penalty als Mittelwert ggü. BTC & ETH
+    df["beta_pen"] = 1.0 - np.minimum(1.0, 0.5 * (df["beta_btc"].fillna(1) + df["beta_eth"].fillna(1)) / 2)
+    df["beta_pen"] = np.clip(df["beta_pen"], 0.5, 1.0)
 
-    d["market_cap"] = pd.to_numeric(d.get("market_cap"), errors="coerce")
-    d["mc_bucket"] = _mc_bucket(d["market_cap"])
+    # ------------------------------------------------------------
+    # Globaler Score (Momentum + Volumen + Drawdown)
+    # ------------------------------------------------------------
+    score_global = (
+        0.40 * df["z_mom30"] +
+        0.25 * df["z_mom7"] +
+        0.25 * df["z_vmc"] +
+        0.10 * df["z_dd"]
+    )
 
-    slope_raw = _safe_num(d, "price_change_percentage_30d_in_currency", np.nan)
-    volacc    = _safe_num(d, "vol_acc", np.nan)
-    breaksc   = _safe_num(d, "breakout_score", np.nan)
-    level     = _safe_num(d, "buzz_level", np.nan)
-    buzzacc   = _safe_num(d, "buzz_acc", np.nan)
+    # Dämpfung bei überhitzten Coins (≥ +250% in 30d)
+    overheat_mask = df["mom_30d_pct"].fillna(0) >= 250
+    score_global = score_global * np.where(overheat_mask, 0.5, 1.0)
 
-    z_slope = _z_by_bucket(slope_raw, d["mc_bucket"], winsor=2.5)
-    z_vol   = _z_by_bucket(volacc,    d["mc_bucket"])
-    z_brk   = _z_by_bucket(breaksc,   d["mc_bucket"])
-    z_blvl  = _z_by_bucket(level,     d["mc_bucket"])
-    z_bacc  = _z_by_bucket(buzzacc,   d["mc_bucket"])
+    # Beta-Dämpfung anwenden
+    score_global = score_global * df["beta_pen"]
 
-    z_buzz = pd.concat([z_blvl, z_bacc], axis=1).max(axis=1)
+    # ------------------------------------------------------------
+    # Ergebnis speichern
+    # ------------------------------------------------------------
+    df["score_global"] = score_global.fillna(0)
+    df["score_segment"] = df["score_global"]  # segmentabhängig erweiterbar
 
-    z_slope = _ensure_series(z_slope, idx).fillna(0.0)
-    z_vol   = _ensure_series(z_vol,   idx).fillna(0.0)
-    z_brk   = _ensure_series(z_brk,   idx).fillna(0.0)
-    z_buzz  = _ensure_series(z_buzz,  idx).fillna(0.0)
+    return df
 
-    early = 0.30 * z_slope + 0.30 * z_vol + 0.30 * z_brk + 0.10 * z_buzz
 
-    overext = slope_raw.fillna(0.0) >= 250.0
-    early.loc[overext] = early.loc[overext] * 0.5
+# ================================================================
+# 🚀 COMPUTE_EARLY_SCORE – Früherkennungsscore gemäß Zielbild
+# ================================================================
+def compute_early_score(df_in: pd.DataFrame) -> pd.DataFrame:
+    """
+    Berechnet den Early-Signal-Score zur Früherkennung starker Momentumbewegungen.
+    Features: z_slope, z_volacc, z_break, z_buzz_level/acc (kombiniert)
+    """
+    df = df_in.copy()
 
-    beta_btc = _safe_num(d, "beta_btc", np.nan)
-    beta_eth = _safe_num(d, "beta_eth", np.nan)
-    beta_eff = pd.concat([beta_btc, beta_eth], axis=1).max(axis=1)
+    # ------------------------------------------------------------
+    # Sicherstellen, dass benötigte Felder existieren
+    # ------------------------------------------------------------
+    required_cols = ["z_slope", "z_volacc", "z_break", "z_buzz_level", "z_buzz_acc", "mom_30d_pct"]
+    for col in required_cols:
+        if col not in df.columns:
+            df[col] = 0
 
-    # Audit defaults
-    risk_regime = "neutral"
-    beta_pen = pd.Series(1.0, index=idx, dtype="float64")
+    # Kombinierter Buzz (max zwischen Level und Acceleration)
+    df["z_buzz_combined"] = df[["z_buzz_level", "z_buzz_acc"]].max(axis=1)
 
-    if isinstance(regime_info, dict):
-        btc_mom30 = float(regime_info.get("btc_mom30", 0.0) or 0.0)
-        eth_mom30 = float(regime_info.get("eth_mom30", 0.0) or 0.0)
-        risk_off = (btc_mom30 < 0.0) and (eth_mom30 < 0.0)
-        risk_regime = "risk_off" if risk_off else "risk_on"
-        if risk_off:
-            hb = beta_eff - 1.0
-            hb = hb.clip(lower=0.0).fillna(0.0)
-            damp = 1.0 - 0.15 * hb.clip(upper=2.0)
-            beta_pen = damp
-            early = early * damp
+    # Dämpfung bei überhitzten Coins (≥ +250% in 30d)
+    damp_factor = np.where(df["mom_30d_pct"].fillna(0) >= 250, 0.5, 1.0)
 
-    if peg_mask is not None:
-        m = _align_bool_mask(peg_mask, idx)
-        early.values[m.values] = np.nan
+    # Early Score gemäß Zielbild
+    early = (
+        0.30 * np.clip(df["z_slope"], -2.5, 2.5) +
+        0.30 * df["z_volacc"] +
+        0.30 * df["z_break"] +
+        0.10 * df["z_buzz_combined"]
+    ) * damp_factor
 
-    d["early_score"] = early
-    d["risk_regime"] = risk_regime if isinstance(risk_regime, str) else str(risk_regime)
-    d["beta_pen"] = pd.to_numeric(beta_pen, errors="coerce") if isinstance(beta_pen, pd.Series) else float(beta_pen)
-    return d
+    df["early_score"] = np.clip(early, -3, 3).fillna(0)
 
+    return df
