@@ -243,6 +243,17 @@ def cg_markets(vs: str = "usd", pages: int = 4, cache_hours: int = 24) -> pd.Dat
         print(f"✅ Live CoinGecko-Daten geladen ({len(df)} Einträge) und gecached")
 
     # === 3️⃣ Nachbearbeitung ===
+    # 🩹 Fix: Sicherstellen, dass total_volume existiert (CoinGecko API-Fallback)
+    if "total_volume" not in df.columns:
+        alt_cols = [c for c in df.columns if "volume" in c.lower()]
+        if alt_cols:
+            logging.warning(f"⚠️ 'total_volume' nicht gefunden – verwende Ersatzspalte '{alt_cols[0]}'")
+            df["total_volume"] = df[alt_cols[0]]
+        else:
+            logging.warning("⚠️ 'total_volume' fehlt vollständig – setze Platzhalterwerte (0)")
+            df["total_volume"] = 0
+    
+    
     # Entferne Coins ohne Market Cap oder Volume
     df = df[df["market_cap"].notna() & df["total_volume"].notna()]
     print(f"[INFO] cg_markets: {len(df)} valide Coins nach Filterung")
