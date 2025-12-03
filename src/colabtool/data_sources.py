@@ -415,13 +415,6 @@ def get_alias_seed() -> pd.DataFrame:
         print(f"[warn] get_alias_seed fehlgeschlagen: {e}")
         return pd.DataFrame(columns=["alias", "coin_id"])
 
-# Map MEXC Pairs
-
-import pandas as pd
-import os
-import requests
-from datetime import datetime
-
 def map_mexc_pairs(df: pd.DataFrame) -> pd.DataFrame:
     """
     Ergänzt die Spalte 'mexc_pair' basierend auf der MEXC-Paarliste.
@@ -431,17 +424,8 @@ def map_mexc_pairs(df: pd.DataFrame) -> pd.DataFrame:
     """
     cache_path = _make_cache_path("mexc_pairs.csv")
     use_live = True
+    mexc_pairs = None  # <- hier definieren, damit verfügbar
 
-    # 🩹 Fix: Sicherstellen, dass MEXC-Pairs die Spalte 'base' enthalten
-    if "base" not in mexc_pairs.columns:
-        alt_cols = [c for c in mexc_pairs.columns if c.lower() in ("base_coin", "currency", "symbol")]
-        if alt_cols:
-            logging.warning(f"⚠️ 'base' nicht gefunden – verwende Ersatzspalte '{alt_cols[0]}'")
-            mexc_pairs["base"] = mexc_pairs[alt_cols[0]]
-        else:
-            logging.warning("⚠️ 'base'-Spalte fehlt vollständig – setze Dummy-Werte.")
-            mexc_pairs["base"] = "UNKNOWN"
-    
     if os.path.exists(cache_path):
         mtime = datetime.fromtimestamp(os.path.getmtime(cache_path))
         age_hours = (datetime.now() - mtime).total_seconds() / 3600
@@ -465,14 +449,17 @@ def map_mexc_pairs(df: pd.DataFrame) -> pd.DataFrame:
                 resp2 = requests.get("https://api.mexc.com/api/v3/defaultSymbols", timeout=10)
                 resp2.raise_for_status()
                 symbols = resp2.json()
-                data = [{"symbol": s, "base": s.split("_")[0], "quote": s.split("_")[1], "status": "TRADING"} for s in symbols]
+                data = [{"symbol": s, "base": s.split('_')[0], "quote": s.split('_')[1], "status": "TRADING"} for s in symbols]
             if not data:
                 print("⚠️ /defaultSymbols leer – zweiter Fallback auf /market/api/v1/symbols ...")
                 resp3 = requests.get("https://www.mexc.com/open/api/v2/market/symbols", timeout=10)
                 resp3.raise_for_status()
                 symbols2 = resp3.json().get("data", [])
                 data = [
-                    {"symbol": d.get("symbol"), "base": d.get("symbol").split("_")[0], "quote": d.get("symbol").split("_")[1], "status": "TRADING"}
+                    {"symbol": d.get("symbol"),
+                     "base": d.get("symbol").split('_')[0],
+                     "quote": d.get("symbol").split('_')[1],
+                     "status": "TRADING"}
                     for d in symbols2 if d.get("symbol")
                 ]
         except Exception as e:
@@ -489,31 +476,44 @@ def map_mexc_pairs(df: pd.DataFrame) -> pd.DataFrame:
             df["mexc_pair"] = None
             return df
 
-        # Struktur angleichen (z. B. baseAsset -> base)
-        rename_map = {
-            "baseAsset": "base",
-            "quoteAsset": "quote"
-        }
-        mexc_pairs = mexc_pairs.rename(columns=rename_map)
-        
-        # Spalten prüfen
-        expected_cols = {"base", "quote", "symbol"}
-        if not expected_cols.issubset(mexc_pairs.columns):
-            print(f"⚠️ Unerwartete Struktur in MEXC-Daten: {list(mexc_pairs.columns)} – Mapping übersprungen.")
-            df["mexc_pair"] = None
-            return df
+    # 🩹 Fix: Sicherstellen, dass MEXC-Pairs die Spalte 'base' enthalten
+    if mexc_pairs is None or mexc_pairs.empty:
+        logging.warning("⚠️ Keine MEXC-Pairs geladen – setze Dummy-Werte.")
+        df["mexc_pair"] = None
+        return df
 
-    mexc_pairs["base"] = mexc_pairs["base"].str.upper()
-    mexc_pairs["quote"] = mexc_pairs["quote"].str.upper()
+    if "base" not in mexc_pairs.columns:
+        alt_cols = [c for c in mexc_pairs.columns if c.lower() in ("base_coin", "currency", "symbol")]
+        if alt_cols:
+            logging.warning(f"⚠️ 'base' nicht gefunden – verwende Ersatzspalte '{alt_cols[0]}'")
+            mexc_pairs["base"] = mexc_pairs[alt_cols[0]]
+        else:
+            logging.warning("⚠️ 'base'-Spalte fehlt vollständig – setze Dummy-Werte.")
+            mexc_pairs["base"] = "UNKNOWN"
+
+    # Struktur angleichen (z. B. baseAsset -> base)
+    rename_map = {"baseAsset": "base", "quoteAsset": "quote"}
+    mexc_pairs = mexc_pairs.rename(columns=rename_map)
+
+    # Spalten prüfen
+    expected_cols = {"base", "quote", "symbol"}
+    if not expected_cols.issubset(mexc_pairs.columns):
+        print(f"⚠️ Unerwartete Struktur in MEXC-Daten: {list(mexc_pairs.columns)} – Mapping übersprungen.")
+        df["mexc_pair"] = None
+        return df
+
+    mexc_pairs["base"] = mexc_pairs["base"].astype(str).str.upper()
+    mexc_pairs["quote"] = mexc_pairs["quote"].astype(str).str.upper()
     mexc_pairs = mexc_pairs[mexc_pairs["quote"].isin(["USDT", "USDC"])]
 
     mapping = dict(zip(mexc_pairs["base"], mexc_pairs["symbol"]))
-    df["symbol"] = df["symbol"].str.upper()
+    df["symbol"] = df["symbol"].astype(str).str.upper()
     df["mexc_pair"] = df["symbol"].map(mapping)
 
     found = df["mexc_pair"].notna().sum()
     print(f"✅ map_mexc_pairs: {found} gültige Paare gefunden")
     return df
+
     
 def ensure_seed_alias_exists():
     #Sorgt dafür, dass im aktuellen Snapshot-Verzeichnis eine seed_alias.csv liegt.
