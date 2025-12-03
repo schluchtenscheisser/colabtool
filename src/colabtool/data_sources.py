@@ -502,8 +502,15 @@ def map_mexc_pairs(df: pd.DataFrame) -> pd.DataFrame:
         df["mexc_pair"] = None
         return df
 
-    mexc_pairs["base"] = mexc_pairs["base"].astype(str).str.upper()
-    mexc_pairs["quote"] = mexc_pairs["quote"].astype(str).str.upper()
+    # 🩹 Robustify: sicherstellen, dass base/quote reine Strings sind
+    for col in ["base", "quote"]:
+        if col not in mexc_pairs.columns:
+            mexc_pairs[col] = "UNKNOWN"
+        else:
+            mexc_pairs[col] = (
+                mexc_pairs[col]
+                .apply(lambda x: str(x).upper() if not isinstance(x, (list, dict, pd.Series)) else "UNKNOWN")
+            )
     mexc_pairs = mexc_pairs[mexc_pairs["quote"].isin(["USDT", "USDC"])]
 
     mapping = dict(zip(mexc_pairs["base"], mexc_pairs["symbol"]))
