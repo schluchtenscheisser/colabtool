@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 4eed6a750f115a36dd2db8188dc16ec553192d2a_
+_Generated from commit: 0f1da1ae89a55239036508b3489b7122bfa9a71b_
 
 ## pyproject.toml
 
@@ -1625,7 +1625,7 @@ def add_buzz_metrics_for_candidates(
 
 ## src/colabtool/data_sources.py
 
-SHA256: `2225d568012703b7fcdf65d07ba1f432fd1071fb3db15adf3a33361fb2010094`
+SHA256: `424adbe0d1e03c6a9a7b8088816bb31e138d08240b0e43d7602d509629b631c2`
 
 ```python
 # modules/data_sources.py
@@ -2132,8 +2132,15 @@ def map_mexc_pairs(df: pd.DataFrame) -> pd.DataFrame:
         df["mexc_pair"] = None
         return df
 
-    mexc_pairs["base"] = mexc_pairs["base"].astype(str).str.upper()
-    mexc_pairs["quote"] = mexc_pairs["quote"].astype(str).str.upper()
+    # 🩹 Robustify: sicherstellen, dass base/quote reine Strings sind
+    for col in ["base", "quote"]:
+        if col not in mexc_pairs.columns:
+            mexc_pairs[col] = "UNKNOWN"
+        else:
+            mexc_pairs[col] = (
+                mexc_pairs[col]
+                .apply(lambda x: str(x).upper() if not isinstance(x, (list, dict, pd.Series)) else "UNKNOWN")
+            )
     mexc_pairs = mexc_pairs[mexc_pairs["quote"].isin(["USDT", "USDC"])]
 
     mapping = dict(zip(mexc_pairs["base"], mexc_pairs["symbol"]))
