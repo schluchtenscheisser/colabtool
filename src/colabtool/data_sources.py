@@ -432,6 +432,16 @@ def map_mexc_pairs(df: pd.DataFrame) -> pd.DataFrame:
     cache_path = _make_cache_path("mexc_pairs.csv")
     use_live = True
 
+    # 🩹 Fix: Sicherstellen, dass MEXC-Pairs die Spalte 'base' enthalten
+    if "base" not in mexc_pairs.columns:
+        alt_cols = [c for c in mexc_pairs.columns if c.lower() in ("base_coin", "currency", "symbol")]
+        if alt_cols:
+            logging.warning(f"⚠️ 'base' nicht gefunden – verwende Ersatzspalte '{alt_cols[0]}'")
+            mexc_pairs["base"] = mexc_pairs[alt_cols[0]]
+        else:
+            logging.warning("⚠️ 'base'-Spalte fehlt vollständig – setze Dummy-Werte.")
+            mexc_pairs["base"] = "UNKNOWN"
+    
     if os.path.exists(cache_path):
         mtime = datetime.fromtimestamp(os.path.getmtime(cache_path))
         age_hours = (datetime.now() - mtime).total_seconds() / 3600
