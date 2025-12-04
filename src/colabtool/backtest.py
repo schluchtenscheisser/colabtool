@@ -1,7 +1,7 @@
 # modules/backtest.py
 from __future__ import annotations
 from typing import List
-from .utils import pd, np, logging
+from .utilities import pd, np, logging
 from .data_sources import cg_market_chart
 
 
