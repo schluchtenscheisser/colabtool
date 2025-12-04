@@ -3,7 +3,7 @@ from __future__ import annotations
 import os, json, time, hashlib
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Callable
-from .utils import logging
+from .utilities import logging
 
 def setup_cg_chart_cache(cache_dir: Optional[str] = None, ttl_hours: int = 24) -> None:
     """
