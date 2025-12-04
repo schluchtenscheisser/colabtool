@@ -8,7 +8,7 @@ from typing import Dict, List, Optional, Union
 from pathlib import Path
 
 import requests
-from .utils import pd, np, logging, CACHE_DIR as _UTILS_CACHE_DIR
+from .utilities import pd, np, logging, CACHE_DIR as _UTILS_CACHE_DIR
 
 __all__ = [
     "cg_markets",
