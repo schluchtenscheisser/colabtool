@@ -35,7 +35,7 @@ jobs:
         run: |
           echo "🚀 Running offline snapshot pipeline (no API calls)..."
           export PYTHONPATH=src
-          python -m colabtool.run_snapshot_mode offline
+          python -m colabtool.run_snapshot_mode --offline
           echo "✅ Offline snapshot run completed"
 
       - name: Verify Excel output
