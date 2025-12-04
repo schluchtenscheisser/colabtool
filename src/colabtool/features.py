@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import re
-from .utils import pd, np, logging
+from .utilities import pd, np, logging
 
 # Manuelle Blacklist (IDs in Kleinbuchstaben)
 EXCLUDE_IDS = set([
