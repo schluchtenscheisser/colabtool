@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: c93fac76425bf43c3d7aab648ada19d0032d8af6_
+_Generated from commit: acb2158751b61cb057fad1f5a349d9db60c279df_
 
 ## pyproject.toml
 
@@ -631,7 +631,7 @@ def tag_segment(row) -> str:
 
 ## src/colabtool/breakout.py
 
-SHA256: `5e98c387a45061e088f223fce7c359d31bb4f392cfbc9996135ab160df98c416`
+SHA256: `00f22d8e56a1ea954f2918816c5308f264e691da66de72d9ccaa19495835a75f`
 
 ```python
 
@@ -643,7 +643,7 @@ import time
 from typing import Dict, List, Optional, Tuple
 
 import requests
-from .utils import pd, np, logging
+from .utilities import pd, np, logging
 
 # --------- MEXC HTTP ---------
 _MEXC_BASE = "https://api.mexc.com"
