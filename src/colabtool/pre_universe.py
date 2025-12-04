@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from typing import Tuple
-from .utils import pd, np, logging
+from .utilities import pd, np, logging
 from .features import is_stable_like, is_wrapped_like, peg_like_mask
 from .data_sources import enrich_categories
 
