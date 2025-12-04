@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: a7a155319112e016ae5bb60b3105e229a06086e4_
+_Generated from commit: 55ba154b4bee8d9a340e94221cabec65d68a15bd_
 
 ## pyproject.toml
 
@@ -2227,7 +2227,7 @@ def attach_categories(df_in: pd.DataFrame, sleep_s: float = 0.0) -> pd.DataFrame
 
 ## src/colabtool/scores.py
 
-SHA256: `0764af95d350fb303ec669b14135a1974083c0c4ba9ee6d84c69869e8c6df3f3`
+SHA256: `8c0402de3be0b71278b73b23f2da522dda8ec62ddf4896b41602112370d472bf`
 
 ```python
 
@@ -2235,7 +2235,7 @@ SHA256: `0764af95d350fb303ec669b14135a1974083c0c4ba9ee6d84c69869e8c6df3f3`
 from __future__ import annotations
 
 from typing import Optional
-from .utils import pd, np, logging
+from .utilities import pd, np, logging
 
 # ----------------------------
 # Helpers
