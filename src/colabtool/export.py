@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Dict, Any
-from .utils import pd, np, logging
+from .utilities import pd, np, logging
 from pandas.api.types import (
     is_datetime64_any_dtype,
     is_categorical_dtype,
