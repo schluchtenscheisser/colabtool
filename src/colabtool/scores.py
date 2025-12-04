@@ -163,3 +163,19 @@ def compute_early_score(df_in: pd.DataFrame) -> pd.DataFrame:
     df["early_score"] = np.clip(early, -3, 3).fillna(0)
 
     return df
+    
+# Wrapper ergänzen
+def compute_scores(df):
+    """
+    Legacy wrapper for backward compatibility.
+    Delegates to score_block() + compute_early_score().
+    """
+    try:
+        df = score_block(df)
+        df = compute_early_score(df)
+        return df
+    except Exception as e:
+        import logging
+        logging.exception(f"compute_scores failed: {e}")
+        raise
+
