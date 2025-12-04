@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: c75817fd91ef93e9d9fcfd547f0c1af852d47421_
+_Generated from commit: 671009472321a9059d1d302843395d7b01f42004_
 
 ## pyproject.toml
 
@@ -2462,7 +2462,7 @@ if __name__ == "__main__":
 
 ## src/colabtool/category_providers.py
 
-SHA256: `acc67975941fae6c3902717e6dd04bf9103a6f6caa58256f1882f3b5254517ad`
+SHA256: `e33a41675a5df8a014574e8bb45040334d5ee510cd7cdf31ad9311ce3b68fb04`
 
 ```python
 # modules/category_providers.py
@@ -2475,7 +2475,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
 
 import requests
-from .utils import pd, np, logging
+from .utilities import pd, np, logging
 
 try:
     # primär CG-Variante aus euren Datenquellen nutzen (inkl. interner CG-Ratensteuerung)
