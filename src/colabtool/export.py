@@ -155,3 +155,33 @@ def create_full_excel_export(
                     write_sheet(sheet_df, sheet_name, writer)
 
     logging.info(f"✅ Excel erfolgreich exportiert: {output_path}")
+
+# Alte Funktion export-snapshot wiederherstellen
+def export_snapshot(df, export_path: str | None = None):
+    """
+    Legacy wrapper for backward compatibility.
+    Delegates to create_full_excel_export() using make_fulldata().
+    """
+    import os
+    import logging
+    from datetime import datetime
+    from .export_helpers import make_fulldata
+
+    if export_path is None:
+        asof = datetime.today().strftime("%Y%m%d")
+        snapshot_dir = os.path.join("snapshots", asof)
+        os.makedirs(snapshot_dir, exist_ok=True)
+        export_path = os.path.join(snapshot_dir, f"{asof}_fullsnapshot.xlsx")
+
+    full_df = make_fulldata(df)
+
+    try:
+        create_full_excel_export(full_df, export_path)
+        logging.info(f"✅ Exported snapshot to {export_path}")
+    except Exception as e:
+        logging.exception(f"❌ export_snapshot failed: {e}")
+        raise
+
+    return export_path
+
+
