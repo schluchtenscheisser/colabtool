@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: a8c544d92969e728517a156f7cb8b89267b5212d_
+_Generated from commit: 8bd41ff964a5fa5dffc3d88bde980c75e150dd29_
 
 ## pyproject.toml
 
@@ -2890,13 +2890,13 @@ def setup_cg_chart_cache(cache_dir: Optional[str] = None, ttl_hours: int = 24) -
 
 ## src/colabtool/export_helpers.py
 
-SHA256: `f6144d01a35529af09c478a520eea0e71dcaddc52510319c6c2e14fa921ff155`
+SHA256: `1c50c5e17048e190c4573ec038f941ed9c8125361c59b73e7521599c02a466ed`
 
 ```python
 # modules/export_helpers.py
 from __future__ import annotations
 from typing import List
-from .utils import pd
+from .utilities import pd
 
 def _cols(dfin, names: List[str]) -> list:
     return [c for c in names if c in dfin.columns]
