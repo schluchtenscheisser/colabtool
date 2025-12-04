@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 2d0c0072ec34530a786b0c7170f13d839f6980e2_
+_Generated from commit: 13151965a02d62749bf0b54ed1e525d9987712b6_
 
 ## pyproject.toml
 
@@ -492,14 +492,14 @@ def export_snapshot(df, export_path: str | None = None):
 
 ## src/colabtool/features.py
 
-SHA256: `4817f0db98053585f2b94a6f0d47b95d11590247a546411aefa1dafff63e9918`
+SHA256: `b3a300f2f4b810d8aa0cb271596cf4f0706fc46f84a0e709650be57247eacd05`
 
 ```python
 # modules/features.py
 from __future__ import annotations
 
 import re
-from .utils import pd, np, logging
+from .utilities import pd, np, logging
 
 # Manuelle Blacklist (IDs in Kleinbuchstaben)
 EXCLUDE_IDS = set([
