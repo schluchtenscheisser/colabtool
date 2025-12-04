@@ -22,8 +22,11 @@ jobs:
         with:
           python-version: "3.11"
           
-      - name: Set PYTHONPATH
-        run: echo "PYTHONPATH=src" >> $GITHUB_ENV
+      - name: Set working directory to repository root
+        run: cd $GITHUB_WORKSPACE
+
+      - name: Add src to PYTHONPATH
+        run: echo "PYTHONPATH=$GITHUB_WORKSPACE/src" >> $GITHUB_ENV
 
       - name: Install dependencies
         run: |
