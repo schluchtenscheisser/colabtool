@@ -22,11 +22,12 @@ jobs:
         with:
           python-version: "3.11"
           
-      - name: Set working directory to repository root
-        run: cd $GITHUB_WORKSPACE
-
-      - name: Add src to PYTHONPATH
-        run: echo "PYTHONPATH=$GITHUB_WORKSPACE/src" >> $GITHUB_ENV
+      # 🧩 Pfadkorrektur: stelle sicher, dass src/ im Suchpfad ist
+      - name: Fix PYTHONPATH for src layout
+        run: |
+          echo "PYTHONPATH=$GITHUB_WORKSPACE/src" >> $GITHUB_ENV
+          echo "✅ PYTHONPATH set to: $GITHUB_WORKSPACE/src"
+          ls -R src || true
 
       - name: Install dependencies
         run: |
