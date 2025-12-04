@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 8bd41ff964a5fa5dffc3d88bde980c75e150dd29_
+_Generated from commit: 21b30896b1ed211fc2c8ee0cd72ca4eaba0718db_
 
 ## pyproject.toml
 
@@ -2148,7 +2148,7 @@ def ensure_seed_alias_exists():
 
 ## src/colabtool/pre_universe.py
 
-SHA256: `7859a9bedc558bf33a641f498ff4c445ee99bed33a12382cb39a1d3e83f6d77b`
+SHA256: `a145707a38a35ee85e50b87cd9039bbd36fa09aa29efca84562c06989ce67a6e`
 
 ```python
 
@@ -2157,7 +2157,7 @@ from __future__ import annotations
 
 import re
 from typing import Tuple
-from .utils import pd, np, logging
+from .utilities import pd, np, logging
 from .features import is_stable_like, is_wrapped_like, peg_like_mask
 from .data_sources import enrich_categories
 
