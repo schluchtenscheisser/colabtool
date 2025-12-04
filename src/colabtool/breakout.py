@@ -7,7 +7,7 @@ import time
 from typing import Dict, List, Optional, Tuple
 
 import requests
-from .utils import pd, np, logging
+from .utilities import pd, np, logging
 
 # --------- MEXC HTTP ---------
 _MEXC_BASE = "https://api.mexc.com"
