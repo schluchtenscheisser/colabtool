@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 64f43c8579a6f1d2e53359c18fafb8c8386660b7_
+_Generated from commit: c75817fd91ef93e9d9fcfd547f0c1af852d47421_
 
 ## pyproject.toml
 
@@ -1296,7 +1296,7 @@ def http_get_json(url: str, params: dict | None = None, ttl_sec: int = 3600, use
 
 ## src/colabtool/buzz.py
 
-SHA256: `4359e1f8ed3af54160fc8bea74e315b4ae2d9ae4631c9ce98e2a7beef2883ecf`
+SHA256: `2e81f6f7e5caceb0abbf26b011022bb096aefc0765f2ad49bb0ec8b728ed8d84`
 
 ```python
 # modules/buzz.py
@@ -1311,7 +1311,7 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 import feedparser
-from .utils import pd, np, logging
+from .utilities import pd, np, logging
 
 __all__ = ["fetch_rss_all", "add_buzz_metrics_for_candidates"]
 
