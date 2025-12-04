@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: fb7c0fa89c7e803c70755edd7e532bfad8b663f3_
+_Generated from commit: 92c9c5ef977a990ed34a580f2e78ff1196674573_
 
 ## pyproject.toml
 
@@ -74,21 +74,23 @@ jobs:
 
 ## src/colabtool/run_snapshot_mode.py
 
-SHA256: `e31229ede8925034f6b962baa45f8e7a7cb88e2bf18b5424ad1e8b6d59842adc`
+SHA256: `bcfcb3b3ebcc09d3f62094bb491dfbb449cda81d2e9f3f72bcf88c8be42d1fcb`
 
 ```python
 """
-Run Snapshot Mode → vollständige Early-Signal-Pipeline mit Backtest und Export
+Run Snapshot Mode → vollständige Early-Signal-Pipeline mit Backtest und Export.
 Erzeugt snapshots/YYYYMMDD/ mit allen Daten und Excel-Dateien.
+Unterstützt Standard-, Fast- und Offline-Modus.
 """
 
 import os
 import argparse
+import logging
 from datetime import datetime
-import pandas as pd
 from pathlib import Path
+import pandas as pd
 
-# ENV-Vars & API-Verhalten
+# ENV-Vars & API-Verhalten (Standard-Defaults)
 os.environ.update({
     "ENABLE_PIT_CATEGORIES": "1",
     "ENABLE_PIT_MEXC": "1",
@@ -105,7 +107,7 @@ os.environ.update({
 })
 
 # Core-Imports
-from colabtool.data_sources import cg_markets, map_mexc_pairs
+from colabtool.data_sources import cg_markets, map_mexc_pairs, get_alias_seed
 from colabtool.pre_universe import apply_pre_universe_filters
 from colabtool.features import compute_feature_block
 from colabtool.breakout import compute_breakout_for_ids
@@ -114,11 +116,20 @@ from colabtool.scores import score_block, compute_early_score
 from colabtool.backtest import backtest_on_snapshot
 from colabtool.export_helpers import make_fulldata
 from colabtool.export import create_full_excel_export
-from colabtool.data_sources import get_alias_seed  # added for seed_alias.csv
-from colabtool.utils.validation import ensure_schema  # new import
+from colabtool.utils.validation import ensure_schema
+
 
 # --------------------------------------------------
-# Validierungs-Helper
+# Logging-Setup
+# --------------------------------------------------
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+)
+
+
+# --------------------------------------------------
+# Hilfsfunktion: Score-Validierung
 # --------------------------------------------------
 def validate_scores(df: pd.DataFrame) -> None:
     required_cols = ["score_global", "early_score"]
@@ -128,35 +139,38 @@ def validate_scores(df: pd.DataFrame) -> None:
 
     nan_counts = df[required_cols].isna().sum()
     if nan_counts.any():
-        print(f"⚠️ Warnung: NaN-Werte gefunden in: {nan_counts.to_dict()}")
+        logging.warning(f"NaN-Werte in Scores: {nan_counts.to_dict()}")
         df.dropna(subset=required_cols, inplace=True)
 
     valid_count = len(df)
     if valid_count < 100:
         raise ValueError(f"⚠️ Zu wenige valide Scores: {valid_count}")
 
-    print(f"✅ Score-Validierung bestanden ({valid_count} valide Zeilen)")
+    logging.info(f"✅ Score-Validierung bestanden ({valid_count} valide Zeilen)")
 
 
 # --------------------------------------------------
-# Hauptfunktion
+# Hauptfunktion: Snapshot Pipeline
 # --------------------------------------------------
-def run_snapshot(mode: str = "standard", offline: bool = False):
+def run_snapshot(mode: str = "standard", offline: bool = False) -> Path:
     """
     Führt den vollständigen Snapshot-Lauf aus.
     mode: 'standard' | 'fast' | 'offline'
     offline=True erzwingt synthetische Mock-Daten (keine API-Aufrufe)
     """
+
     ASOF_DATE = datetime.today().strftime("%Y%m%d")
-    snapshot_dir = os.path.join("snapshots", ASOF_DATE)
-    os.makedirs(snapshot_dir, exist_ok=True)
+    snapshot_dir = Path("snapshots") / ASOF_DATE
+    snapshot_dir.mkdir(parents=True, exist_ok=True)
 
     effective_mode = "offline" if offline or mode == "offline" else mode
-    print(f"🚀 Starte Snapshot-Lauf ({effective_mode}) für {ASOF_DATE} in {snapshot_dir}")
+    logging.info(f"🚀 Starte Snapshot-Lauf ({effective_mode}) für {ASOF_DATE}")
 
-    # 1️⃣ Universe laden (CoinGecko) oder Mock-Daten
+    # ------------------------------
+    # 1️⃣ Universe laden (API oder Mock)
+    # ------------------------------
     if effective_mode == "offline":
-        print("⚙️ OFFLINE-MODUS: Verwende synthetische Mock-Daten (kein API-Zugriff)")
+        logging.info("⚙️ OFFLINE-MODUS: Verwende synthetische Mock-Daten (kein API-Zugriff).")
         df = pd.DataFrame([
             {
                 "id": "alpha",
@@ -179,9 +193,11 @@ def run_snapshot(mode: str = "standard", offline: bool = False):
         ])
     else:
         df = cg_markets(vs="usd", pages=4)
-        print(f"✅ cg_markets: {len(df)} Coins geladen")
+        logging.info(f"✅ cg_markets: {len(df)} Coins geladen")
 
-    # Schema-Validierung (stellt sicher, dass alle Kernspalten vorhanden sind)
+    # ------------------------------
+    # 2️⃣ Schema-Validierung
+    # ------------------------------
     SCHEMA_MAP = {
         "id": str,
         "symbol": str,
@@ -195,81 +211,80 @@ def run_snapshot(mode: str = "standard", offline: bool = False):
     }
     df = ensure_schema(df, SCHEMA_MAP)
 
-    # Nur echte Pipeline-Schritte, wenn nicht offline
+    # ------------------------------
+    # 3️⃣ Haupt-Pipeline (nur Live)
+    # ------------------------------
     if effective_mode != "offline":
-        # 2️⃣ Filter anwenden
         df = apply_pre_universe_filters(df)
-        print(f"✅ apply_pre_universe_filters: {len(df)} nach Filtern")
+        logging.info(f"✅ apply_pre_universe_filters: {len(df)} nach Filtern")
 
-        # 3️⃣ Feature-Block berechnen
         df = compute_feature_block(df)
-        print(f"✅ compute_feature_block abgeschlossen")
+        logging.info("✅ compute_feature_block abgeschlossen")
 
-        # 4️⃣ MEXC-Paare zuordnen
         df = map_mexc_pairs(df)
-        print(f"✅ map_mexc_pairs abgeschlossen")
+        logging.info("✅ map_mexc_pairs abgeschlossen")
 
-        # 5️⃣ Breakouts
         cand_ids = df["id"].tolist()
         df = compute_breakout_for_ids(df, cand_ids)
-        print(f"✅ compute_breakout_for_ids abgeschlossen")
+        logging.info("✅ compute_breakout_for_ids abgeschlossen")
 
-        # 6️⃣ Buzz
         df = add_buzz_metrics_for_candidates(df)
-        print(f"✅ add_buzz_metrics_for_candidates abgeschlossen")
+        logging.info("✅ add_buzz_metrics_for_candidates abgeschlossen")
 
-    # 7️⃣ Scoring
+    # ------------------------------
+    # 4️⃣ Scoring
+    # ------------------------------
     df = score_block(df)
     df = compute_early_score(df)
-    print(f"✅ Scores & Early Score berechnet")
+    logging.info("✅ Scores & Early Score berechnet")
 
-    # 8️⃣ Validierung (nur bei Live-Modus streng prüfen)
+    # ------------------------------
+    # 5️⃣ Validierung & Backtest
+    # ------------------------------
     if effective_mode != "offline":
         validate_scores(df)
-    else:
-        print("ℹ️ Offline-Modus: Score-Validierung übersprungen")
-
-    # 9️⃣ Backtest (nur live)
-    if effective_mode != "offline":
         backtest_results = backtest_on_snapshot(df, top_k=20, horizons=[20, 40, 60])
-        print(f"✅ Backtest abgeschlossen ({len(backtest_results)} Zeilen)")
+        logging.info(f"✅ Backtest abgeschlossen ({len(backtest_results)} Zeilen)")
     else:
         backtest_results = pd.DataFrame()
-        print("ℹ️ Offline-Modus: Backtest übersprungen")
+        logging.info("ℹ️ Offline-Modus: Score-Validierung & Backtest übersprungen")
 
-    # 🔟 Volldatensatz für Export vorbereiten
+    # ------------------------------
+    # 6️⃣ Export
+    # ------------------------------
     full_df = make_fulldata(df)
 
-    # 1️⃣1️⃣ Exportdateien im Tagesverzeichnis speichern
     export_filename = (
         f"{ASOF_DATE}_offline_fullsnapshot.xlsx"
         if effective_mode == "offline"
         else f"{ASOF_DATE}_fullsnapshot.xlsx"
     )
-    export_path = os.path.join(snapshot_dir, export_filename)
+    export_path = snapshot_dir / export_filename
 
-    print(f"📦 Erzeuge Excel → {export_path}")
+    logging.info(f"📦 Erzeuge Excel → {export_path}")
     create_full_excel_export(full_df, export_path, extra_sheets={"Backtest": backtest_results})
 
-    # CSV-Dateien (CoinGecko, MEXC, seed_alias) nur im Live-Modus
+    # ------------------------------
+    # 7️⃣ CSV-Dateien (nur Live)
+    # ------------------------------
     if effective_mode != "offline":
-        cg_path = os.path.join(snapshot_dir, "cg_markets.csv")
-        mexc_path = os.path.join(snapshot_dir, "mexc_pairs.csv")
-        alias_path = os.path.join(snapshot_dir, "seed_alias.csv")
+        cg_path = snapshot_dir / "cg_markets.csv"
+        mexc_path = snapshot_dir / "mexc_pairs.csv"
+        alias_path = snapshot_dir / "seed_alias.csv"
 
         df.to_csv(cg_path, index=False)
-        print(f"✅ cg_markets.csv gespeichert")
+        logging.info("✅ cg_markets.csv gespeichert")
 
         if "mexc_pair" in df.columns:
             df[["id", "symbol", "mexc_pair"]].to_csv(mexc_path, index=False)
-            print(f"✅ mexc_pairs.csv gespeichert")
+            logging.info("✅ mexc_pairs.csv gespeichert")
 
-        if not os.path.exists(alias_path):
+        if not alias_path.exists():
             seed_alias = get_alias_seed()
             seed_alias.to_csv(alias_path, index=False)
-            print(f"⚠️ seed_alias.csv neu erstellt → {alias_path}")
+            logging.info(f"⚠️ seed_alias.csv neu erstellt → {alias_path}")
 
-    print(f"🎯 Snapshot abgeschlossen → {export_path}")
+    logging.info(f"🎯 Snapshot abgeschlossen → {export_path}")
     return export_path
 
 
@@ -291,7 +306,10 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    run_snapshot(mode=args.mode, offline=args.offline)
+
+    mode = "offline" if args.offline else args.mode
+    logging.info(f"🚀 Starte CLI-Snapshot mit Modus: {mode}")
+    run_snapshot(mode=mode, offline=args.offline)
 
 ```
 
