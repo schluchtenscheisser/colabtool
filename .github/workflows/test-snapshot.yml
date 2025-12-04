@@ -26,7 +26,13 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e .
-          pip install pytest
+          pip install pytest openpyxl pandas xlsxwriter
+
+      - name: Run offline mock snapshot tests
+        run: |
+          echo "🔍 Running offline snapshot pipeline tests (no API calls)"
+          pytest -v tests/test_mock_snapshot.py --maxfail=1 --disable-warnings
+          echo "✅ Offline snapshot pipeline tests passed successfully"
 
       - name: Run scoring + export unit tests
         run: |
