@@ -1,0 +1,31 @@
+Ich möchte einen vollständigen Code-Health- und Impact-Map-Scan für mein Projekt ausführen.
+
+📁 Repository: schluchtenscheisser/colabtool
+
+Ziele:
+
+1. **Lies alle Dateien im Ordner**: src/colabtool/
+
+2. **Identifiziere:**
+- alle vorkommenden DataFrame-Spalten (df["..."] oder .loc[..., "..."])
+- zentrale Variablen in Funktionen (mom_30d_pct, score_global, etc.)
+- Rückgabewerte und Abhängigkeiten zwischen Modulen
+
+3. **Erstelle daraus:**
+- eine Impact-Map (Spalte/Variable → Quelle → Verbraucher → Risiko)
+- eine Kurzbewertung (z. B. „vol_acc wird berechnet, aber nie in Score übernommen“)
+
+4. **Erkenne Inkonsistenzen (z. B. gleiche Spalte, unterschiedliche Namen)**
+
+5. **Gib das Ergebnis als Markdown-Tabelle und kurze Handlungsempfehlungen zurück.**
+
+Wichtig:
+- Keine Änderungen am Code durchführen – nur Analyse und Empfehlungen.
+- Ziel ist eine Dokumentation aller Spalten- und Variablenabhängigkeiten,
+um künftige Änderungen sauber planen zu können.
+
+Output-Struktur:
+
+- Impact-Map (Markdown-Tabelle)
+- „Top 5 Risk Areas“
+- Handlungsempfehlungen zur Stabilisierung (z. B. Preflight-Checks, Typvalidierung)
