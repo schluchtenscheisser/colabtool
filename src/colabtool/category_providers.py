@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
 
 import requests
-from .utils import pd, np, logging
+from .utilities import pd, np, logging
 
 try:
     # primär CG-Variante aus euren Datenquellen nutzen (inkl. interner CG-Ratensteuerung)
