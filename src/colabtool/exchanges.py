@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, Tuple
 from pathlib import Path
 
 import requests
-from .utils import pd, np, logging
+from .utilities import pd, np, logging
 
 # -------------------------
 # Konstanten und Endpunkte
