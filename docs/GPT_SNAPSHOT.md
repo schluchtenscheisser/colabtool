@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 21b30896b1ed211fc2c8ee0cd72ca4eaba0718db_
+_Generated from commit: f0c096b52443a29a66f5a4694241ad52d14a680e_
 
 ## pyproject.toml
 
@@ -2227,7 +2227,7 @@ def attach_categories(df_in: pd.DataFrame, sleep_s: float = 0.0) -> pd.DataFrame
 
 ## src/colabtool/scores.py
 
-SHA256: `8c0402de3be0b71278b73b23f2da522dda8ec62ddf4896b41602112370d472bf`
+SHA256: `72ca41fc92f33ce80a27704a9218ec3bb25b0e49edc215ef13c495fe66eee98f`
 
 ```python
 
@@ -2395,6 +2395,22 @@ def compute_early_score(df_in: pd.DataFrame) -> pd.DataFrame:
     df["early_score"] = np.clip(early, -3, 3).fillna(0)
 
     return df
+    
+# Wrapper ergänzen
+def compute_scores(df):
+    """
+    Legacy wrapper for backward compatibility.
+    Delegates to score_block() + compute_early_score().
+    """
+    try:
+        df = score_block(df)
+        df = compute_early_score(df)
+        return df
+    except Exception as e:
+        import logging
+        logging.exception(f"compute_scores failed: {e}")
+        raise
+
 
 ```
 
