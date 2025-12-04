@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 13151965a02d62749bf0b54ed1e525d9987712b6_
+_Generated from commit: c93fac76425bf43c3d7aab648ada19d0032d8af6_
 
 ## pyproject.toml
 
@@ -915,7 +915,7 @@ def compute_breakout_for_ids(df_all: pd.DataFrame,
 
 ## src/colabtool/exchanges.py
 
-SHA256: `369b67b545e81e96bb920b62352e4014af5e256a248eba0c0d2770894d9a5758`
+SHA256: `3c11a937734f3a73827fcc8eef497659bfed031a595d12cb764f017d41d688bf`
 
 ```python
 from __future__ import annotations
@@ -926,7 +926,7 @@ from typing import Dict, List, Optional, Tuple
 from pathlib import Path
 
 import requests
-from .utils import pd, np, logging
+from .utilities import pd, np, logging
 
 # -------------------------
 # Konstanten und Endpunkte
