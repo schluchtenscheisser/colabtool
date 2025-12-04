@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: f0c096b52443a29a66f5a4694241ad52d14a680e_
+_Generated from commit: 2d0c0072ec34530a786b0c7170f13d839f6980e2_
 
 ## pyproject.toml
 
@@ -297,7 +297,7 @@ if __name__ == "__main__":
 
 ## src/colabtool/export.py
 
-SHA256: `f27e1e35b51ea88b14297d700b8890e5056f9ae4f48f35c78da5da39ee3d6e7d`
+SHA256: `5861961362a5a58ae15d0838f82ba58d7bb141501f65f481d998297a05333533`
 
 ```python
 from __future__ import annotations
@@ -457,6 +457,36 @@ def create_full_excel_export(
                     write_sheet(sheet_df, sheet_name, writer)
 
     logging.info(f"✅ Excel erfolgreich exportiert: {output_path}")
+
+# Alte Funktion export-snapshot wiederherstellen
+def export_snapshot(df, export_path: str | None = None):
+    """
+    Legacy wrapper for backward compatibility.
+    Delegates to create_full_excel_export() using make_fulldata().
+    """
+    import os
+    import logging
+    from datetime import datetime
+    from .export_helpers import make_fulldata
+
+    if export_path is None:
+        asof = datetime.today().strftime("%Y%m%d")
+        snapshot_dir = os.path.join("snapshots", asof)
+        os.makedirs(snapshot_dir, exist_ok=True)
+        export_path = os.path.join(snapshot_dir, f"{asof}_fullsnapshot.xlsx")
+
+    full_df = make_fulldata(df)
+
+    try:
+        create_full_excel_export(full_df, export_path)
+        logging.info(f"✅ Exported snapshot to {export_path}")
+    except Exception as e:
+        logging.exception(f"❌ export_snapshot failed: {e}")
+        raise
+
+    return export_path
+
+
 
 ```
 
