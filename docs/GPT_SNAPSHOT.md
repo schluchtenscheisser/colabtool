@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 671009472321a9059d1d302843395d7b01f42004_
+_Generated from commit: a8c544d92969e728517a156f7cb8b89267b5212d_
 
 ## pyproject.toml
 
@@ -1610,7 +1610,7 @@ def add_buzz_metrics_for_candidates(
 
 ## src/colabtool/data_sources.py
 
-SHA256: `424adbe0d1e03c6a9a7b8088816bb31e138d08240b0e43d7602d509629b631c2`
+SHA256: `c2ce755798459ef37a35007e077939bd6c044e43c97cb0aa5a170783045bb861`
 
 ```python
 # modules/data_sources.py
@@ -1623,7 +1623,7 @@ from typing import Dict, List, Optional, Union
 from pathlib import Path
 
 import requests
-from .utils import pd, np, logging, CACHE_DIR as _UTILS_CACHE_DIR
+from .utilities import pd, np, logging, CACHE_DIR as _UTILS_CACHE_DIR
 
 __all__ = [
     "cg_markets",
