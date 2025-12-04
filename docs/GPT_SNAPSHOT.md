@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: acb2158751b61cb057fad1f5a349d9db60c279df_
+_Generated from commit: 680e2ebc8fd428cc4a0f0e9e1d270aad4a50255e_
 
 ## pyproject.toml
 
@@ -2862,7 +2862,7 @@ def get_cg_categories() -> list[dict]:
 
 ## src/colabtool/cg_cache_patch.py
 
-SHA256: `7c2818b24a4756a7976a6cf5b03766a54931832bbe55844ca2568550fa0593ed`
+SHA256: `a360ec9469a326446420771042abba5adde9414936c3ff831af5c620085edf26`
 
 ```python
 # modules/cg_cache_patch.py
@@ -2870,7 +2870,7 @@ from __future__ import annotations
 import os, json, time, hashlib
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Callable
-from .utils import logging
+from .utilities import logging
 
 def setup_cg_chart_cache(cache_dir: Optional[str] = None, ttl_hours: int = 24) -> None:
     """
