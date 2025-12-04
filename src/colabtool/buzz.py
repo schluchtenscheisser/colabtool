@@ -10,7 +10,7 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 import feedparser
-from .utils import pd, np, logging
+from .utilities import pd, np, logging
 
 __all__ = ["fetch_rss_all", "add_buzz_metrics_for_candidates"]
 
