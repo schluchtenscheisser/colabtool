@@ -261,6 +261,19 @@ def cg_markets(vs: str = "usd", pages: int = 4, cache_hours: int = 24) -> pd.Dat
                 raise ValueError(f"❌ Fehler beim Laden von CoinGecko Seite {page}: {e}")
 
         df = pd.DataFrame(all_pages)
+        # --- Sicherstellen, dass Momentum-Felder aus CoinGecko erhalten bleiben ---
+        momentum_cols = [
+            "price_change_percentage_1h_in_currency",
+            "price_change_percentage_24h_in_currency",
+            "price_change_percentage_7d_in_currency",
+            "price_change_percentage_30d_in_currency",
+        ]
+
+        # CoinGecko liefert diese Felder manchmal nur für Teilmengen – fehlende Spalten ergänzen:
+        for col in momentum_cols:
+            if col not in df.columns:
+                df[col] = np.nan
+                
         df.to_csv(cache_path, index=False)
         print(f"✅ Live CoinGecko-Daten geladen ({len(df)} Einträge) und gecached")
 
