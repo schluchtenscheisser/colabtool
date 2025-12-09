@@ -500,7 +500,10 @@ def map_mexc_pairs(df: pd.DataFrame) -> pd.DataFrame:
 
     # Normalisierte Spalten
     mexc_pairs["base_normalized"] = mexc_pairs.get("base", mexc_pairs["symbol"].str.split("_").str[0]).apply(normalize_symbol)
-    mexc_pairs["quote_normalized"] = mexc_pairs.get("quote", mexc_pairs["symbol"].str.split("_").str[1]).apply(str.upper)
+    mexc_pairs["quote_normalized"] = mexc_pairs.get(
+        "quote", mexc_pairs["symbol"].str.split("_").str[1]
+    ).apply(lambda x: str(x).upper() if isinstance(x, str) else "UNKNOWN")
+    
     df["symbol_normalized"] = df["symbol"].astype(str).apply(normalize_symbol)
 
     # Nur USDT/USDC-Paare
