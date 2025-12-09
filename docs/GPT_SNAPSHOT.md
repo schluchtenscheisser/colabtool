@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: f8bbbfe41465ecef4f6a99f36115e65c966396d6_
+_Generated from commit: d7e88dd5b35c68065b0626c4996051cc2ee89b77_
 
 ## pyproject.toml
 
@@ -1658,7 +1658,7 @@ def add_buzz_metrics_for_candidates(
 
 ## src/colabtool/data_sources.py
 
-SHA256: `6a0f05759029233be5bd75d7c60f0afff0f7ea953a400090f81d7d8cff0e8291`
+SHA256: `fb1721935456bf72ed4cf0c25a46687d93163607f7fbf3c1fbdfdea1315167d6`
 
 ```python
 # modules/data_sources.py
@@ -2163,7 +2163,10 @@ def map_mexc_pairs(df: pd.DataFrame) -> pd.DataFrame:
 
     # Normalisierte Spalten
     mexc_pairs["base_normalized"] = mexc_pairs.get("base", mexc_pairs["symbol"].str.split("_").str[0]).apply(normalize_symbol)
-    mexc_pairs["quote_normalized"] = mexc_pairs.get("quote", mexc_pairs["symbol"].str.split("_").str[1]).apply(str.upper)
+    mexc_pairs["quote_normalized"] = mexc_pairs.get(
+        "quote", mexc_pairs["symbol"].str.split("_").str[1]
+    ).apply(lambda x: str(x).upper() if isinstance(x, str) else "UNKNOWN")
+    
     df["symbol_normalized"] = df["symbol"].astype(str).apply(normalize_symbol)
 
     # Nur USDT/USDC-Paare
