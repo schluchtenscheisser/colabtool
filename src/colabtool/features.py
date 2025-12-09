@@ -131,23 +131,46 @@ def compute_feature_block(df_in: pd.DataFrame) -> pd.DataFrame:
     else:
         d["mom_30d_pct"] = np.nan
 
-    # --- Fallback, falls CoinGecko keine Daten liefert ---
-    if d["mom_7d_pct"].isna().all() or d["mom_30d_pct"].isna().all():
-        print("⚙️ Fallback aktiv: berechne Momentum lokal via cg_market_chart() ...")
+    # --- Fallback, falls CoinGecko keine oder kaum Momentum-Daten liefert ---
+    missing_ratio_7d = d["mom_7d_pct"].isna().mean()
+    missing_ratio_30d = d["mom_30d_pct"].isna().mean()
+
+    if (missing_ratio_7d > 0.95) or (missing_ratio_30d > 0.95):
+        print(
+            f"⚙️ Momentum-Fallback aktiv: 7d missing={missing_ratio_7d:.1%}, "
+            f"30d missing={missing_ratio_30d:.1%}"
+        )
+
+        from colabtool.data_sources import cg_market_chart
+
         for cid in d["id"]:
             try:
                 chart = cg_market_chart(cid, days=30)
-                prices = [p[1] for p in chart.get("prices", []) if isinstance(p, list)]
+                prices = [
+                    p[1] for p in chart.get("prices", []) if isinstance(p, list)
+                ]
+
+                if not prices or len(prices) < 8:
+                    continue  # zu wenige Datenpunkte
+
+                # --- Momentum 7d ---
                 if len(prices) >= 8:
-                    d.loc[d["id"] == cid, "mom_7d_pct"] = (
-                        (prices[-1] / prices[-8]) - 1
-                    ) * 100
+                    mom7 = (prices[-1] / prices[-8] - 1) * 100
+                    d.loc[d["id"] == cid, "mom_7d_pct"] = mom7
+
+                # --- Momentum 30d ---
                 if len(prices) >= 31:
-                    d.loc[d["id"] == cid, "mom_30d_pct"] = (
-                        (prices[-1] / prices[-31]) - 1
-                    ) * 100
-            except Exception:
+                    mom30 = (prices[-1] / prices[-31] - 1) * 100
+                    d.loc[d["id"] == cid, "mom_30d_pct"] = mom30
+                else:
+                    # Wenn keine 30d-Historie, nimm 7d als Proxy
+                    if not pd.isna(d.loc[d["id"] == cid, "mom_7d_pct"]).all():
+                        d.loc[d["id"] == cid, "mom_30d_pct"] = mom7
+
+            except Exception as e:
+                print(f"⚠️ Momentum-Fallback-Fehler bei {cid}: {e}")
                 continue
+
 
     # --- slope30 bleibt als Alias für 30d-Momentum erhalten (Kompatibilität) ---
     d["slope30"] = d["mom_30d_pct"]
