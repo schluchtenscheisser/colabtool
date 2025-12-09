@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 7e7136697fd86a547de64bcaf45b3f3722551585_
+_Generated from commit: 68d8b69d2f9e2c5658a6f0bdb5e2d2812f56e2c4_
 
 ## pyproject.toml
 
@@ -1658,7 +1658,7 @@ def add_buzz_metrics_for_candidates(
 
 ## src/colabtool/data_sources.py
 
-SHA256: `7d7b5433ab7d63d29be3495fed294c43efa416cca64c7978a93bd89ef6ee9b95`
+SHA256: `a56c41c1c70465be6830aaf204eff0ed5c6de6d690545a7ee168e5ee16c202cd`
 
 ```python
 # modules/data_sources.py
@@ -1920,6 +1920,16 @@ def cg_markets(vs: str = "usd", pages: int = 4, cache_hours: int = 24) -> pd.Dat
                 resp.raise_for_status()
                 data = resp.json()
                 all_pages.extend(data)
+                # --- Sicherstellen, dass Momentum-Felder in allen Seiten beibehalten werden ---
+                for entry in data:
+                    for key in [
+                        "price_change_percentage_1h_in_currency",
+                        "price_change_percentage_24h_in_currency",
+                        "price_change_percentage_7d_in_currency",
+                        "price_change_percentage_30d_in_currency",
+                    ]:
+                        if key not in entry:
+                            entry[key] = None
             except Exception as e:
                 raise ValueError(f"❌ Fehler beim Laden von CoinGecko Seite {page}: {e}")
 
