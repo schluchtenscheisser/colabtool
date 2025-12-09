@@ -29,7 +29,7 @@ jobs:
           pip install -e .
 
       - name: Run full snapshot mode (with scoring & backtest)
-        run: python -m colabtool.run_snapshot_mode --mode fast
+        run: python -m colabtool.run_snapshot_mode
 
       - name: Commit snapshots (robust)
         run: |
