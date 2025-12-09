@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: cb65f939a376de349e0a5d35a8f7c6f245aba299_
+_Generated from commit: cfa46c751a8354ace05d08b870e8e91782c1a11c_
 
 ## pyproject.toml
 
@@ -1658,7 +1658,7 @@ def add_buzz_metrics_for_candidates(
 
 ## src/colabtool/data_sources.py
 
-SHA256: `fb1721935456bf72ed4cf0c25a46687d93163607f7fbf3c1fbdfdea1315167d6`
+SHA256: `b8f64b040c4eb02a9cc5cea3313d1adb68b9a9244d51db7ecb0c6852eefb61ed`
 
 ```python
 # modules/data_sources.py
@@ -2090,24 +2090,27 @@ def get_alias_seed() -> pd.DataFrame:
 # ----------------------------
 # MEXC Mapping (verbessert)
 # ----------------------------
-def normalize_symbol(sym: str) -> str:
-    """Hilfsfunktion: Vereinheitlicht Symbolformat für Matching."""
-    if not isinstance(sym, str):
-        return ""
-    sym = sym.upper().replace("/", "_").replace("-", "_")
-    sym = sym.replace("USDT", "").replace("USDC", "")
-    return sym.strip("_")
-
-
 def map_mexc_pairs(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Ergänzt 'mexc_pair' basierend auf der MEXC-Paarliste.
-    Inklusive Symbol-Normalisierung für robustes Matching.
+    Ergänzt die Spalte 'mexc_pair' basierend auf der offiziellen MEXC Spot API v3.
+
+    Ablauf:
+    1. Versucht, gecachte Daten (max. 24h alt) aus snapshots/ zu laden.
+    2. Wenn kein Cache oder veraltet → lädt Live-Daten von MEXC:
+       - /api/v3/exchangeInfo (offizielle Quelle)
+       - Fallbacks: /api/v3/defaultSymbols und /open/api/v2/market/symbols
+    3. Extrahiert 'base' und 'quote' robust (unterstützt baseAsset/quoteAsset oder parsing aus 'symbol').
+    4. Normalisiert Symbole und mappt CoinGecko-Symbole zu MEXC-Paaren.
+    5. Gibt das ursprüngliche DataFrame mit neuer Spalte 'mexc_pair' zurück.
     """
+    import pandas as pd
+    import requests
+
     cache_path = _make_cache_path("mexc_pairs.csv")
     use_live = True
     mexc_pairs = None
 
+    # === 1️⃣ Cache prüfen ===
     if os.path.exists(cache_path):
         mtime = datetime.fromtimestamp(os.path.getmtime(cache_path))
         age_hours = (datetime.now() - mtime).total_seconds() / 3600
@@ -2118,30 +2121,36 @@ def map_mexc_pairs(df: pd.DataFrame) -> pd.DataFrame:
         else:
             print("⚠️ Cache älter als 24h – hole Live-Daten ...")
 
+    # === 2️⃣ Live-Daten laden ===
     if use_live:
         data = []
         try:
+            # Offizielle API (Spot v3)
             url = "https://api.mexc.com/api/v3/exchangeInfo"
-            resp = requests.get(url, timeout=15)
+            resp = requests.get(url, timeout=20)
             resp.raise_for_status()
             data = resp.json().get("symbols", [])
             if not data:
-                print("⚠️ exchangeInfo leer – Fallback auf /defaultSymbols ...")
+                print("⚠️ exchangeInfo leer – Fallback auf /api/v3/defaultSymbols ...")
                 resp2 = requests.get("https://api.mexc.com/api/v3/defaultSymbols", timeout=10)
                 resp2.raise_for_status()
                 symbols = resp2.json()
-                data = [{"symbol": s, "base": s.split('_')[0], "quote": s.split('_')[1], "status": "TRADING"} for s in symbols]
+                data = [
+                    {"symbol": s, "baseAsset": s.split('_')[0], "quoteAsset": s.split('_')[1]}
+                    for s in symbols if "_" in s
+                ]
             if not data:
-                print("⚠️ /defaultSymbols leer – zweiter Fallback auf /market/api/v1/symbols ...")
+                print("⚠️ /defaultSymbols leer – Fallback auf /open/api/v2/market/symbols ...")
                 resp3 = requests.get("https://www.mexc.com/open/api/v2/market/symbols", timeout=10)
                 resp3.raise_for_status()
-                symbols2 = resp3.json().get("data", [])
+                data2 = resp3.json().get("data", [])
                 data = [
-                    {"symbol": d.get("symbol"),
-                     "base": d.get("symbol").split('_')[0],
-                     "quote": d.get("symbol").split('_')[1],
-                     "status": "TRADING"}
-                    for d in symbols2 if d.get("symbol")
+                    {
+                        "symbol": d.get("symbol"),
+                        "baseAsset": d.get("symbol", "").split("_")[0] if "_" in d.get("symbol", "") else d.get("symbol"),
+                        "quoteAsset": d.get("symbol", "").split("_")[1] if "_" in d.get("symbol", "") else "USDT",
+                    }
+                    for d in data2 if isinstance(d, dict) and "symbol" in d
                 ]
         except Exception as e:
             print(f"⚠️ MEXC API-Fehler: {e}")
@@ -2149,38 +2158,63 @@ def map_mexc_pairs(df: pd.DataFrame) -> pd.DataFrame:
 
         if data:
             mexc_pairs = pd.DataFrame(data)
+            os.makedirs("snapshots", exist_ok=True)
             mexc_pairs.to_csv(cache_path, index=False)
             print(f"✅ Live MEXC-Daten geladen ({len(mexc_pairs)} Paare) und gecached")
         else:
-            print("⚠️ Keine MEXC-Daten gefunden – Mapping übersprungen.")
+            print("⚠️ Keine MEXC-Daten verfügbar – Mapping übersprungen.")
             df["mexc_pair"] = None
             return df
 
-    if mexc_pairs is None or mexc_pairs.empty:
-        logging.warning("⚠️ Keine MEXC-Pairs geladen – setze Dummy-Werte.")
-        df["mexc_pair"] = None
-        return df
+    # === 3️⃣ Robustheit: Spalten vereinheitlichen ===
+    rename_map = {
+        "baseAsset": "base",
+        "quoteAsset": "quote",
+        "baseCurrency": "base",
+        "quoteCurrency": "quote",
+    }
+    mexc_pairs = mexc_pairs.rename(columns=rename_map, errors="ignore")
 
-    # Normalisierte Spalten
-    mexc_pairs["base_normalized"] = mexc_pairs.get("base", mexc_pairs["symbol"].str.split("_").str[0]).apply(normalize_symbol)
-    mexc_pairs["quote_normalized"] = mexc_pairs.get(
-        "quote", mexc_pairs["symbol"].str.split("_").str[1]
-    ).apply(lambda x: str(x).upper() if isinstance(x, str) else "UNKNOWN")
-    
-    df["symbol_normalized"] = df["symbol"].astype(str).apply(normalize_symbol)
+    if "base" not in mexc_pairs.columns or "quote" not in mexc_pairs.columns:
+        # Fallback: parse aus symbol falls nötig
+        if "symbol" in mexc_pairs.columns:
+            mexc_pairs["base"] = mexc_pairs["symbol"].str.replace("-", "_").str.replace("/", "_").str.split("_").str[0]
+            mexc_pairs["quote"] = mexc_pairs["symbol"].str.replace("-", "_").str.replace("/", "_").str.split("_").str[1]
+            print("⚙️ 'base'/'quote' aus 'symbol' extrahiert (Fallback).")
+        else:
+            logging.warning("⚠️ Keine Basisdaten in MEXC-Pairs – Dummy-Werte gesetzt.")
+            df["mexc_pair"] = None
+            return df
 
-    # Nur USDT/USDC-Paare
-    mexc_pairs = mexc_pairs[mexc_pairs["quote_normalized"].isin(["USDT", "USDC"])]
+    # === 4️⃣ Datenbereinigung ===
+    for col in ["base", "quote"]:
+        mexc_pairs[col] = mexc_pairs[col].astype(str).str.upper().str.strip()
 
-    mapping = dict(zip(mexc_pairs["base_normalized"], mexc_pairs["symbol"]))
-    df["mexc_pair"] = df["symbol_normalized"].map(mapping)
+    # Nur relevante Stablecoin-Quotes
+    mexc_pairs = mexc_pairs[mexc_pairs["quote"].isin(["USDT", "USDC", "USD"])]
 
-    matched = df["mexc_pair"].notna().sum()
-    print(f"✅ map_mexc_pairs: {matched} gültige Paare gefunden ({matched}/{len(df)} = {matched/len(df):.2%})")
-    if matched == 0:
-        logging.warning("⚠️ Keine MEXC-Paare gemappt – bitte Symbol-Format prüfen oder Normalisierung erweitern.")
+    # === 5️⃣ Normalisierung & Mapping ===
+    def normalize_symbol(sym):
+        if not isinstance(sym, str):
+            return ""
+        sym = sym.upper().strip()
+        sym = sym.replace("-", "_").replace("/", "_")
+        return sym
+
+    df["symbol"] = df["symbol"].astype(str).str.upper()
+    mexc_pairs["base_norm"] = mexc_pairs["base"].apply(normalize_symbol)
+    mapping = dict(zip(mexc_pairs["base_norm"], mexc_pairs["symbol"]))
+
+    df["mexc_pair"] = df["symbol"].map(mapping)
+    found = df["mexc_pair"].notna().sum()
+
+    ratio = (found / len(df) * 100) if len(df) else 0
+    print(f"✅ map_mexc_pairs: {found} gültige Paare gefunden ({found}/{len(df)} = {ratio:.2f}%)")
+
+    if found == 0:
+        print("⚠️ Keine MEXC-Paare gemappt – bitte Symbol-Format prüfen oder Normalisierung erweitern.")
+
     return df
-
 
 def ensure_seed_alias_exists():
     """Sorgt dafür, dass im aktuellen Snapshot-Verzeichnis eine seed_alias.csv liegt."""
