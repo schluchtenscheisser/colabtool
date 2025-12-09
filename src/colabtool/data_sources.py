@@ -257,6 +257,16 @@ def cg_markets(vs: str = "usd", pages: int = 4, cache_hours: int = 24) -> pd.Dat
                 resp.raise_for_status()
                 data = resp.json()
                 all_pages.extend(data)
+                # --- Sicherstellen, dass Momentum-Felder in allen Seiten beibehalten werden ---
+                for entry in data:
+                    for key in [
+                        "price_change_percentage_1h_in_currency",
+                        "price_change_percentage_24h_in_currency",
+                        "price_change_percentage_7d_in_currency",
+                        "price_change_percentage_30d_in_currency",
+                    ]:
+                        if key not in entry:
+                            entry[key] = None
             except Exception as e:
                 raise ValueError(f"❌ Fehler beim Laden von CoinGecko Seite {page}: {e}")
 
