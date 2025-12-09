@@ -98,16 +98,66 @@ def exclusion_mask(df: pd.DataFrame, cats: pd.Series) -> pd.Series:
 
 # ---------- Feature-Block ----------
 def compute_feature_block(df_in: pd.DataFrame) -> pd.DataFrame:
+    import numpy as np
+    import pandas as pd
+    from colabtool.data_sources import cg_market_chart
+
     d = df_in.copy()
-    d["market_cap"]   = pd.to_numeric(d.get("market_cap"), errors="coerce")
-    d["total_volume"] = pd.to_numeric(d.get("total_volume"), errors="coerce")
+
+    # --- Basismetriken ---
+    d["market_cap"] = pd.to_numeric(d.get("market_cap"), errors="coerce")
+    d["total_volume"] = pd.to_numeric(
+        d.get("total_volume", d.get("volume")), errors="coerce"
+    )
+
+    # --- Volumen/Marktkapitalisierung ---
     with np.errstate(divide="ignore", invalid="ignore"):
-        d["volume_mc_ratio"] = (d["total_volume"] / d["market_cap"]).replace([np.inf, -np.inf], np.nan)
-    d["slope30"] = pd.to_numeric(d.get("price_change_percentage_30d_in_currency"), errors="coerce")
-    d["mom_7d_pct"]  = pd.to_numeric(d.get("price_change_percentage_7d_in_currency"), errors="coerce")
-    d["mom_30d_pct"] = pd.to_numeric(d.get("price_change_percentage_30d_in_currency"), errors="coerce")
+        d["volume_mc_ratio"] = (
+            d["total_volume"] / d["market_cap"]
+        ).replace([np.inf, -np.inf], np.nan)
+
+    # --- Momentum (direkt von CoinGecko, falls vorhanden) ---
+    if "price_change_percentage_7d_in_currency" in d.columns:
+        d["mom_7d_pct"] = pd.to_numeric(
+            d["price_change_percentage_7d_in_currency"], errors="coerce"
+        )
+    else:
+        d["mom_7d_pct"] = np.nan
+
+    if "price_change_percentage_30d_in_currency" in d.columns:
+        d["mom_30d_pct"] = pd.to_numeric(
+            d["price_change_percentage_30d_in_currency"], errors="coerce"
+        )
+    else:
+        d["mom_30d_pct"] = np.nan
+
+    # --- Fallback, falls CoinGecko keine Daten liefert ---
+    if d["mom_7d_pct"].isna().all() or d["mom_30d_pct"].isna().all():
+        print("⚙️ Fallback aktiv: berechne Momentum lokal via cg_market_chart() ...")
+        for cid in d["id"]:
+            try:
+                chart = cg_market_chart(cid, days=30)
+                prices = [p[1] for p in chart.get("prices", []) if isinstance(p, list)]
+                if len(prices) >= 8:
+                    d.loc[d["id"] == cid, "mom_7d_pct"] = (
+                        (prices[-1] / prices[-8]) - 1
+                    ) * 100
+                if len(prices) >= 31:
+                    d.loc[d["id"] == cid, "mom_30d_pct"] = (
+                        (prices[-1] / prices[-31]) - 1
+                    ) * 100
+            except Exception:
+                continue
+
+    # --- slope30 bleibt als Alias für 30d-Momentum erhalten (Kompatibilität) ---
+    d["slope30"] = d["mom_30d_pct"]
+
+    # --- ATH Drawdown ---
     d["ath_drawdown_pct"] = pd.to_numeric(d.get("ath_change_percentage"), errors="coerce")
+
+    # --- Circulating Supply (optional, falls verfügbar) ---
     d["circ_pct"] = np.nan
+
     return d
 
 # ---------- Segmentierung ----------
