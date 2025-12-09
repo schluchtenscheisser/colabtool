@@ -372,37 +372,70 @@ def update_seen_ids(ids: List[str]) -> Dict[str, int]:
     return {"total_seen": len(sset), "added": new}
 
 
-def cg_market_chart(coin_id: str, vs: str = "usd", days: int = 60, interval: str = "daily", ttl_s: int = 6 * 3600) -> Optional[dict]:
+def cg_market_chart(coin_id: str, vs: str = "usd", days: int = 60, interval: str = "daily", ttl_s: int = 6 * 3600) -> dict:
     """
-    Wrapper für /coins/{id}/market_chart
-    Free-first; optional PRO wenn verfügbar.
-    Lokaler Cache.
+    Robust fetch for /coins/{id}/market_chart
+    Includes retries, rate-limit handling, and local cache validation.
+    Used primarily for momentum fallback.
     """
+    import json, os, time, requests
+    from datetime import datetime
+
     coin_id = str(coin_id).strip().lower()
     vs = str(vs).strip().lower() or "usd"
     days = int(max(1, min(days, 3650)))
-    interval = "daily" if str(interval).lower() != "hourly" else "hourly"
+    interval = "daily" if str(interval).lower() not in ["hourly"] else interval
 
     cpath = _chart_cache_path(coin_id, vs, days, interval)
-    try:
-        if cpath.is_file() and (time.time() - cpath.stat().st_mtime < ttl_s):
-            return json.load(cpath.open("r"))
-    except Exception:
-        pass
 
-    params = {"vs_currency": vs, "days": days, "interval": interval}
-    j = _one_get(_session_free, _FREE_BASE, f"/coins/{coin_id}/market_chart", params, max(1, _CG_MAX_ATTEMPTS))
-    if not isinstance(j, dict) or not any(k in j for k in ("prices", "market_caps", "total_volumes")):
-        if _HAS_PRO:
-            p2 = dict(params)
-            p2["x_cg_pro_api_key"] = _CG_KEY
-            j = _one_get(_session_pro, _PRO_BASE, f"/coins/{coin_id}/market_chart", p2, max(1, _CG_MAX_ATTEMPTS))
-    if isinstance(j, dict) and ("prices" in j or "market_caps" in j or "total_volumes" in j):
+    # --- Step 1: Cache verwenden, wenn frisch ---
+    if cpath.is_file():
         try:
-            json.dump(j, cpath.open("w"))
+            age_h = (time.time() - cpath.stat().st_mtime) / 3600
+            if age_h < (ttl_s / 3600):
+                with cpath.open("r") as f:
+                    data = json.load(f)
+                if isinstance(data, dict) and "prices" in data and len(data["prices"]) > 0:
+                    return data
         except Exception:
             pass
-        return j
+
+    # --- Step 2: Live-Daten von CoinGecko abrufen ---
+    url = f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart"
+    params = {"vs_currency": vs, "days": days, "interval": interval}
+
+    for attempt in range(3):
+        try:
+            resp = requests.get(url, params=params, timeout=20)
+            if resp.status_code == 429:
+                print(f"⏳ Rate limit (429) bei {coin_id} – warte 30s ...")
+                time.sleep(30)
+                continue
+            resp.raise_for_status()
+            data = resp.json()
+
+            # Sicherstellen, dass Daten vorhanden sind
+            if not isinstance(data, dict) or "prices" not in data or len(data["prices"]) == 0:
+                print(f"⚠️ Keine gültigen Preise für {coin_id} erhalten (Versuch {attempt+1})")
+                time.sleep(3)
+                continue
+
+            # Cache schreiben
+            try:
+                cpath.parent.mkdir(parents=True, exist_ok=True)
+                with cpath.open("w") as f:
+                    json.dump(data, f)
+            except Exception:
+                pass
+
+            return data
+
+        except Exception as e:
+            print(f"⚠️ Fehler beim Abruf von cg_market_chart({coin_id}): {e}")
+            time.sleep(3)
+
+    # --- Step 3: Fallback, wenn gar nichts klappt ---
+    print(f"❌ Kein gültiges Chart für {coin_id} verfügbar – gebe leeren Preisverlauf zurück.")
     return {"prices": []}
 
 
