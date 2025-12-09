@@ -121,22 +121,19 @@ def compute_feature_block(df_in: pd.DataFrame) -> pd.DataFrame:
         ).replace([np.inf, -np.inf], np.nan)
 
     # --- Momentum (direkt von CoinGecko, falls vorhanden) ---
-    d["mom_7d_pct"] = pd.to_numeric(
-        d.get("price_change_percentage_7d_in_currency"), errors="coerce"
-    )
-    d["mom_30d_pct"] = pd.to_numeric(
-        d.get("price_change_percentage_30d_in_currency"), errors="coerce"
-    )
+    d["mom_7d_pct"] = d.get("price_change_percentage_7d_in_currency", np.nan)
+    d["mom_30d_pct"] = d.get("price_change_percentage_30d_in_currency", np.nan)
 
-    # --- Sicherstellen, dass NaN als float erkannt werden ---
-    d["mom_7d_pct"] = pd.to_numeric(d["mom_7d_pct"], errors="coerce")
-    d["mom_30d_pct"] = pd.to_numeric(d["mom_30d_pct"], errors="coerce")
+    # --- Leere Strings und Sonderwerte in NaN umwandeln ---
+    for col in ["mom_7d_pct", "mom_30d_pct"]:
+        d[col] = d[col].replace(["", " ", "None", "null", "NaN", None], np.nan)
+        d[col] = pd.to_numeric(d[col], errors="coerce")
 
-    # --- Anteil fehlender Werte ---
+    # --- Fehlende Werte berechnen ---
     missing_ratio_7d = d["mom_7d_pct"].isna().mean()
     missing_ratio_30d = d["mom_30d_pct"].isna().mean()
 
-    # --- Fallback aktivieren, wenn zu viele Werte fehlen (>95%) ---
+    # --- Momentum-Fallback ---
     if (missing_ratio_7d > 0.95) or (missing_ratio_30d > 0.95):
         print(
             f"⚙️ Momentum-Fallback aktiv: 7d missing={missing_ratio_7d:.1%}, "
@@ -161,14 +158,12 @@ def compute_feature_block(df_in: pd.DataFrame) -> pd.DataFrame:
                     mom30 = (prices[-1] / prices[-31] - 1) * 100
                     d.loc[d["id"] == cid, "mom_30d_pct"] = mom30
                 else:
-                    # Wenn keine 30d-Historie, nutze 7d als Proxy
                     if not pd.isna(d.loc[d["id"] == cid, "mom_7d_pct"]).all():
                         d.loc[d["id"] == cid, "mom_30d_pct"] = mom7
 
             except Exception as e:
                 print(f"⚠️ Momentum-Fallback-Fehler bei {cid}: {e}")
                 continue
-
     else:
         print(
             f"✅ Momentum-Daten direkt von CoinGecko: "
