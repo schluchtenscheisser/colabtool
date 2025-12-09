@@ -16,6 +16,10 @@ __all__ = [
     "map_tvl",
     "update_seen_ids",
     "cg_market_chart",
+    "persist_pit_snapshot",
+    "map_mexc_pairs",
+    "get_alias_seed",
+    "ensure_seed_alias_exists",
 ]
 
 # ----------------------------
@@ -30,9 +34,11 @@ def _env_str(name: str, default: str = "") -> str:
         return default
     return s.split(maxsplit=1)[0]
 
+
 def _env_bool(name: str, default: bool = False) -> bool:
     raw = _env_str(name, "1" if default else "0").lower()
     return raw in {"1", "true", "yes", "y", "on"}
+
 
 def _env_int(name: str, default: int) -> int:
     s = _env_str(name, str(default))
@@ -41,6 +47,7 @@ def _env_int(name: str, default: int) -> int:
     except Exception:
         return default
 
+
 def _env_float(name: str, default: float) -> float:
     s = _env_str(name, str(default))
     try:
@@ -48,12 +55,14 @@ def _env_float(name: str, default: float) -> float:
     except Exception:
         return default
 
+
 def _is_colab() -> bool:
     try:
         import google.colab  # noqa: F401
         return True
     except Exception:
         return False
+
 
 # ----------------------------
 # ENV & Defaults
@@ -78,6 +87,7 @@ _CG_CATS_TIME_BUDGET_S = _env_float("CG_CATS_TIME_BUDGET_S", 300.0)
 # ----------------------------
 _CACHE_DIR: Path = Path(os.getenv("CACHE_DIR", str(_UTILS_CACHE_DIR)))
 
+
 def _resolve_seed_dir() -> Path:
     env = os.getenv("SEED_DIR")
     if env:
@@ -85,6 +95,7 @@ def _resolve_seed_dir() -> Path:
     if _is_colab():
         return Path("/content/drive/MyDrive/crypto_tool/seeds")
     return Path.cwd() / "seeds"
+
 
 _SEED_DIR: Path = _resolve_seed_dir()
 
@@ -120,12 +131,14 @@ _session_free.headers.update({
 # ----------------------------
 _last_call = 0.0
 
+
 def _sleep_min_interval():
     global _last_call
     dt = time.time() - _last_call
     wait = max(0.0, _CG_MIN_INTERVAL_S - dt)
     if wait > 0:
         time.sleep(wait)
+
 
 def _one_get(session: requests.Session, base: str, path: str, params: dict, attempts: int) -> Optional[Union[dict, list]]:
     global _last_call
@@ -155,35 +168,34 @@ def _one_get(session: requests.Session, base: str, path: str, params: dict, atte
             time.sleep(wait)
     return None
 
+
 def _sanitize_params_for_free(params: dict) -> dict:
     p = dict(params or {})
     p.pop("x_cg_pro_api_key", None)
     return p
+
 
 def _cg_get(path: str, params: Optional[dict] = None, attempts: int = None) -> Optional[Union[dict, list]]:
     """Free-first. PRO nur, wenn verfügbar und Free nichts liefert."""
     max_att = attempts if attempts is not None else _CG_MAX_ATTEMPTS
     params = dict(params or {})
 
-    # Free zuerst
     j = _one_get(_session_free, _FREE_BASE, path, _sanitize_params_for_free(params), max_att)
     if isinstance(j, (dict, list)) or not _HAS_PRO:
         return j
 
-    # Optional PRO
-    p2 = dict(params); p2["x_cg_pro_api_key"] = _CG_KEY
-    j2 = _one_get(_session_pro, _PRO_BASE, path, p2, max_att)
-    return j2
+    p2 = dict(params)
+    p2["x_cg_pro_api_key"] = _CG_KEY
+    return _one_get(_session_pro, _PRO_BASE, path, p2, max_att)
+
 
 # ----------------------------
 # Public API
 # ----------------------------
 import pandas as pd
-import os
-import requests
-from datetime import datetime, timedelta
+from datetime import datetime
 
-# === Globale Pfade ===
+
 def _get_snapshot_dir() -> str:
     """Erzeugt und gibt das Tagesverzeichnis unter snapshots/YYYYMMDD zurück."""
     today = datetime.today().strftime("%Y%m%d")
@@ -191,9 +203,22 @@ def _get_snapshot_dir() -> str:
     os.makedirs(path, exist_ok=True)
     return path
 
+
 def _make_cache_path(filename: str) -> str:
     """Erzeugt einen absoluten Pfad im Tagesverzeichnis."""
     return os.path.join(_get_snapshot_dir(), filename)
+
+
+def _chart_cache_path(coin_id: str, vs: str, days: int, interval: str) -> Path:
+    """Erzeugt einen Cache-Pfad für historische Kursdaten."""
+    fn = f"cg_chart_{coin_id}_{vs}_{days}_{interval}.json".replace("/", "_")
+    p = Path(_make_cache_path(fn))
+    try:
+        p.parent.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        pass
+    return p
+
 
 def cg_markets(vs: str = "usd", pages: int = 4, cache_hours: int = 24) -> pd.DataFrame:
     """
@@ -204,7 +229,6 @@ def cg_markets(vs: str = "usd", pages: int = 4, cache_hours: int = 24) -> pd.Dat
     cache_path = _make_cache_path("cg_markets.csv")
     use_live = True
 
-    # === 1️⃣ Cache prüfen ===
     if os.path.exists(cache_path):
         mtime = datetime.fromtimestamp(os.path.getmtime(cache_path))
         age_hours = (datetime.now() - mtime).total_seconds() / 3600
@@ -215,7 +239,6 @@ def cg_markets(vs: str = "usd", pages: int = 4, cache_hours: int = 24) -> pd.Dat
         else:
             print(f"⚠️ Cache älter als {cache_hours}h – hole Live-Daten von CoinGecko ...")
 
-    # === 2️⃣ Live-Daten abrufen ===
     if use_live:
         all_pages = []
         for page in range(1, pages + 1):
@@ -229,7 +252,7 @@ def cg_markets(vs: str = "usd", pages: int = 4, cache_hours: int = 24) -> pd.Dat
                 resp = requests.get(url, timeout=15)
                 if resp.status_code == 429:
                     print("⏳ Rate limit erreicht – warte 30s ...")
-                    import time; time.sleep(30)
+                    time.sleep(30)
                     resp = requests.get(url, timeout=15)
                 resp.raise_for_status()
                 data = resp.json()
@@ -238,27 +261,21 @@ def cg_markets(vs: str = "usd", pages: int = 4, cache_hours: int = 24) -> pd.Dat
                 raise ValueError(f"❌ Fehler beim Laden von CoinGecko Seite {page}: {e}")
 
         df = pd.DataFrame(all_pages)
-        os.makedirs("snapshots", exist_ok=True)
         df.to_csv(cache_path, index=False)
         print(f"✅ Live CoinGecko-Daten geladen ({len(df)} Einträge) und gecached")
 
-    # === 3️⃣ Nachbearbeitung ===
-    # 🩹 Fix: Sicherstellen, dass total_volume existiert (CoinGecko API-Fallback)
     if "total_volume" not in df.columns:
         alt_cols = [c for c in df.columns if "volume" in c.lower()]
         if alt_cols:
             logging.warning(f"⚠️ 'total_volume' nicht gefunden – verwende Ersatzspalte '{alt_cols[0]}'")
             df["total_volume"] = df[alt_cols[0]]
         else:
-            logging.warning("⚠️ 'total_volume' fehlt vollständig – setze Platzhalterwerte (0)")
             df["total_volume"] = 0
-    
-    
-    # Entferne Coins ohne Market Cap oder Volume
+
     df = df[df["market_cap"].notna() & df["total_volume"].notna()]
     print(f"[INFO] cg_markets: {len(df)} valide Coins nach Filterung")
-
     return df
+
 
 def enrich_categories(ids: List[str], sleep_s: float = 0.0) -> Dict[str, str]:
     """Grobe Kategorien je Coin. Zeitbudget; 400/404 → Unknown."""
@@ -286,11 +303,12 @@ def enrich_categories(ids: List[str], sleep_s: float = 0.0) -> Dict[str, str]:
             out[cid] = (str(val)[:80]) if val else "Unknown"
         else:
             out[cid] = "Unknown"
-        if sleep_s and sleep_s > 0:
-            time.sleep(float(sleep_s))
+        if sleep_s:
+            time.sleep(sleep_s)
     for cid in ids:
         out.setdefault(cid, "Unknown")
     return out
+
 
 def map_tvl(df: pd.DataFrame) -> pd.DataFrame:
     """Seed-basierte TVL-Mappung (seed_tvl_map.csv: id, tvl_usd, llama_slug)."""
@@ -309,6 +327,7 @@ def map_tvl(df: pd.DataFrame) -> pd.DataFrame:
         except Exception as ex:
             logging.warning(f"[tvl] Seed-Map lesen fehlgeschlagen: {ex}")
     return d
+
 
 def update_seen_ids(ids: List[str]) -> Dict[str, int]:
     """Persistente Liste gesehener CoinGecko-IDs zur Erkennung von New-Listings."""
@@ -329,19 +348,8 @@ def update_seen_ids(ids: List[str]) -> Dict[str, int]:
         pass
     return {"total_seen": len(sset), "added": new}
 
-# ----------------------------
-# Charts für Backtest
-# ----------------------------
-def _chart_cache_path(coin_id: str, vs: str, days: int, interval: str) -> Path:
-    fn = f"cg_chart_{coin_id}_{vs}_{days}_{interval}.json".replace("/", "_")
-    p = Path(_make_cache_path(fn))
-    try:
-        p.parent.mkdir(parents=True, exist_ok=True)
-    except Exception:
-        pass
-    return p
 
-def cg_market_chart(coin_id: str, vs: str = "usd", days: int = 60, interval: str = "daily", ttl_s: int = 6*3600) -> Optional[dict]:
+def cg_market_chart(coin_id: str, vs: str = "usd", days: int = 60, interval: str = "daily", ttl_s: int = 6 * 3600) -> Optional[dict]:
     """
     Wrapper für /coins/{id}/market_chart
     Free-first; optional PRO wenn verfügbar.
@@ -363,7 +371,8 @@ def cg_market_chart(coin_id: str, vs: str = "usd", days: int = 60, interval: str
     j = _one_get(_session_free, _FREE_BASE, f"/coins/{coin_id}/market_chart", params, max(1, _CG_MAX_ATTEMPTS))
     if not isinstance(j, dict) or not any(k in j for k in ("prices", "market_caps", "total_volumes")):
         if _HAS_PRO:
-            p2 = dict(params); p2["x_cg_pro_api_key"] = _CG_KEY
+            p2 = dict(params)
+            p2["x_cg_pro_api_key"] = _CG_KEY
             j = _one_get(_session_pro, _PRO_BASE, f"/coins/{coin_id}/market_chart", p2, max(1, _CG_MAX_ATTEMPTS))
     if isinstance(j, dict) and ("prices" in j or "market_caps" in j or "total_volumes" in j):
         try:
@@ -373,9 +382,7 @@ def cg_market_chart(coin_id: str, vs: str = "usd", days: int = 60, interval: str
         return j
     return {"prices": []}
 
-# ----------------------------
-# Implementierung PIT-HIstorie
-# ----------------------------
+
 def persist_pit_snapshot(data: pd.DataFrame, kind: str, date: Optional[str] = None) -> None:
     """
     Speichert ein DataFrame als PIT-Snapshot unter /snapshots/<kind>/yyyymmdd.json
@@ -388,6 +395,7 @@ def persist_pit_snapshot(data: pd.DataFrame, kind: str, date: Optional[str] = No
         data.to_json(file, orient="records", indent=2)
     except Exception as ex:
         logging.warning(f"[pit] Failed to write snapshot {file}: {ex}")
+
 
 def get_alias_seed() -> pd.DataFrame:
     """
@@ -415,16 +423,27 @@ def get_alias_seed() -> pd.DataFrame:
         print(f"[warn] get_alias_seed fehlgeschlagen: {e}")
         return pd.DataFrame(columns=["alias", "coin_id"])
 
+
+# ----------------------------
+# MEXC Mapping (verbessert)
+# ----------------------------
+def normalize_symbol(sym: str) -> str:
+    """Hilfsfunktion: Vereinheitlicht Symbolformat für Matching."""
+    if not isinstance(sym, str):
+        return ""
+    sym = sym.upper().replace("/", "_").replace("-", "_")
+    sym = sym.replace("USDT", "").replace("USDC", "")
+    return sym.strip("_")
+
+
 def map_mexc_pairs(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Ergänzt die Spalte 'mexc_pair' basierend auf der MEXC-Paarliste.
-    Nutzt lokalen Cache (max. 24h alt), sonst Live-API.
-    Unterstützt Fallback auf /defaultSymbols und /market/api/v1/symbols.
-    Bricht nicht hart ab, sondern gibt leeres Mapping mit Warnung zurück.
+    Ergänzt 'mexc_pair' basierend auf der MEXC-Paarliste.
+    Inklusive Symbol-Normalisierung für robustes Matching.
     """
     cache_path = _make_cache_path("mexc_pairs.csv")
     use_live = True
-    mexc_pairs = None  # <- hier definieren, damit verfügbar
+    mexc_pairs = None
 
     if os.path.exists(cache_path):
         mtime = datetime.fromtimestamp(os.path.getmtime(cache_path))
@@ -439,7 +458,6 @@ def map_mexc_pairs(df: pd.DataFrame) -> pd.DataFrame:
     if use_live:
         data = []
         try:
-            # 1️⃣ Versuch: Standard-Endpunkt
             url = "https://api.mexc.com/api/v3/exchangeInfo"
             resp = requests.get(url, timeout=15)
             resp.raise_for_status()
@@ -468,7 +486,6 @@ def map_mexc_pairs(df: pd.DataFrame) -> pd.DataFrame:
 
         if data:
             mexc_pairs = pd.DataFrame(data)
-            os.makedirs("snapshots", exist_ok=True)
             mexc_pairs.to_csv(cache_path, index=False)
             print(f"✅ Live MEXC-Daten geladen ({len(mexc_pairs)} Paare) und gecached")
         else:
@@ -476,54 +493,31 @@ def map_mexc_pairs(df: pd.DataFrame) -> pd.DataFrame:
             df["mexc_pair"] = None
             return df
 
-    # 🩹 Fix: Sicherstellen, dass MEXC-Pairs die Spalte 'base' enthalten
     if mexc_pairs is None or mexc_pairs.empty:
         logging.warning("⚠️ Keine MEXC-Pairs geladen – setze Dummy-Werte.")
         df["mexc_pair"] = None
         return df
 
-    if "base" not in mexc_pairs.columns:
-        alt_cols = [c for c in mexc_pairs.columns if c.lower() in ("base_coin", "currency", "symbol")]
-        if alt_cols:
-            logging.warning(f"⚠️ 'base' nicht gefunden – verwende Ersatzspalte '{alt_cols[0]}'")
-            mexc_pairs["base"] = mexc_pairs[alt_cols[0]]
-        else:
-            logging.warning("⚠️ 'base'-Spalte fehlt vollständig – setze Dummy-Werte.")
-            mexc_pairs["base"] = "UNKNOWN"
+    # Normalisierte Spalten
+    mexc_pairs["base_normalized"] = mexc_pairs.get("base", mexc_pairs["symbol"].str.split("_").str[0]).apply(normalize_symbol)
+    mexc_pairs["quote_normalized"] = mexc_pairs.get("quote", mexc_pairs["symbol"].str.split("_").str[1]).apply(str.upper)
+    df["symbol_normalized"] = df["symbol"].astype(str).apply(normalize_symbol)
 
-    # Struktur angleichen (z. B. baseAsset -> base)
-    rename_map = {"baseAsset": "base", "quoteAsset": "quote"}
-    mexc_pairs = mexc_pairs.rename(columns=rename_map)
+    # Nur USDT/USDC-Paare
+    mexc_pairs = mexc_pairs[mexc_pairs["quote_normalized"].isin(["USDT", "USDC"])]
 
-    # Spalten prüfen
-    expected_cols = {"base", "quote", "symbol"}
-    if not expected_cols.issubset(mexc_pairs.columns):
-        print(f"⚠️ Unerwartete Struktur in MEXC-Daten: {list(mexc_pairs.columns)} – Mapping übersprungen.")
-        df["mexc_pair"] = None
-        return df
+    mapping = dict(zip(mexc_pairs["base_normalized"], mexc_pairs["symbol"]))
+    df["mexc_pair"] = df["symbol_normalized"].map(mapping)
 
-    # 🩹 Robustify: sicherstellen, dass base/quote reine Strings sind
-    for col in ["base", "quote"]:
-        if col not in mexc_pairs.columns:
-            mexc_pairs[col] = "UNKNOWN"
-        else:
-            mexc_pairs[col] = (
-                mexc_pairs[col]
-                .apply(lambda x: str(x).upper() if not isinstance(x, (list, dict, pd.Series)) else "UNKNOWN")
-            )
-    mexc_pairs = mexc_pairs[mexc_pairs["quote"].isin(["USDT", "USDC"])]
-
-    mapping = dict(zip(mexc_pairs["base"], mexc_pairs["symbol"]))
-    df["symbol"] = df["symbol"].astype(str).str.upper()
-    df["mexc_pair"] = df["symbol"].map(mapping)
-
-    found = df["mexc_pair"].notna().sum()
-    print(f"✅ map_mexc_pairs: {found} gültige Paare gefunden")
+    matched = df["mexc_pair"].notna().sum()
+    print(f"✅ map_mexc_pairs: {matched} gültige Paare gefunden ({matched}/{len(df)} = {matched/len(df):.2%})")
+    if matched == 0:
+        logging.warning("⚠️ Keine MEXC-Paare gemappt – bitte Symbol-Format prüfen oder Normalisierung erweitern.")
     return df
 
-    
+
 def ensure_seed_alias_exists():
-    #Sorgt dafür, dass im aktuellen Snapshot-Verzeichnis eine seed_alias.csv liegt.
+    """Sorgt dafür, dass im aktuellen Snapshot-Verzeichnis eine seed_alias.csv liegt."""
     alias_path = _make_cache_path("seed_alias.csv")
     if not os.path.exists(alias_path):
         pd.DataFrame(columns=["alias", "coin_id"]).to_csv(alias_path, index=False)
