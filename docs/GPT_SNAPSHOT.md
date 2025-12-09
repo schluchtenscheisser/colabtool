@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 85132f1332e20302b8185730a6dc4a57733a196f_
+_Generated from commit: 1259bcfd56261408066b4253bc8674566da69a38_
 
 ## pyproject.toml
 
@@ -1708,7 +1708,7 @@ def add_buzz_metrics_for_candidates(
 
 ## src/colabtool/data_sources.py
 
-SHA256: `4f7a41f506df62865635cfc6484cd02c1070be464f2ca79353e0ce6dc7abbc39`
+SHA256: `8d1b6cc710d257e3477de4326ff80c4e4e3f6887538779bdfc7acb40f2074cd5`
 
 ```python
 # modules/data_sources.py
@@ -1789,11 +1789,29 @@ _FREE_BASE = "https://api.coingecko.com/api/v3"
 
 _CG_MAX_ATTEMPTS = _env_int("CG_MAX_ATTEMPTS", 3)
 _CG_SKIP_AFTER_429 = _env_int("CG_SKIP_AFTER_429", 1)
-_CG_RETRY_AFTER_CAP_S = _env_float("CG_RETRY_AFTER_CAP_S", 20.0)
+_CG_RETRY_AFTER_CAP_S = _env_float("CG_RETRY_AFTER_CAP_S", 60.0)
 _CG_BACKOFF_BASE_S = _env_float("CG_BACKOFF_BASE_S", 2.0)
-_CG_MIN_INTERVAL_S = _env_float("CG_MIN_INTERVAL_S", 1.5)
+_CG_MIN_INTERVAL_S = _env_float("CG_MIN_INTERVAL_S", 10)
 
 _CG_CATS_TIME_BUDGET_S = _env_float("CG_CATS_TIME_BUDGET_S", 300.0)
+
+# ----------------------------
+# CoinGecko Rate-Limit Handling
+# ----------------------------
+import time
+
+_last_cg_request = 0.0
+
+def _cg_throttle():
+    """Begrenzt Aufrufrate der CoinGecko-API, um 429-Fehler zu vermeiden."""
+    global _last_cg_request
+    now = time.time()
+    delta = now - _last_cg_request
+    if delta < _CG_MIN_INTERVAL_S:
+        wait = _CG_MIN_INTERVAL_S - delta
+        print(f"⏳ Warte {wait:.1f}s, um CoinGecko-Rate-Limit einzuhalten ...")
+        time.sleep(wait)
+    _last_cg_request = time.time()
 
 # ----------------------------
 # Pfade/Cache/Seeds (CI-sicher, kein erzwungenes /content)
@@ -1962,6 +1980,7 @@ def cg_markets(vs: str = "usd", pages: int = 4, cache_hours: int = 24) -> pd.Dat
             )
             print(f"🔄 Hole CoinGecko Seite {page}/{pages} ...")
             try:
+                _cg_throttle()
                 resp = requests.get(url, timeout=15)
                 if resp.status_code == 429:
                     print("⏳ Rate limit erreicht – warte 30s ...")
@@ -2119,6 +2138,7 @@ def cg_market_chart(coin_id: str, vs: str = "usd", days: int = 60, interval: str
 
     for attempt in range(3):
         try:
+            _cg_throttle()
             resp = requests.get(url, params=params, timeout=20)
             if resp.status_code == 429:
                 print(f"⏳ Rate limit (429) bei {coin_id} – warte 30s ...")
