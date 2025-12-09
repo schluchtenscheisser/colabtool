@@ -1,0 +1,71 @@
+name: Debug CoinGecko vs MEXC Symbols
+
+on:
+  workflow_dispatch:
+
+jobs:
+  debug-symbols:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🧩 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 📦 Install dependencies
+        run: |
+          pip install -e .
+          pip install requests pandas
+
+      - name: 🔍 Run symbol overlap analysis
+        run: |
+          python - <<'EOF'
+          import pandas as pd
+          import requests
+          from colabtool.data_sources import cg_markets
+
+          print("🚀 Starte Symbol-Analyse zwischen CoinGecko und MEXC")
+
+          cg_df = cg_markets(vs="usd", pages=1)
+          print(f"✅ CoinGecko sample: {len(cg_df)} Coins")
+          print(cg_df[["id", "symbol", "name"]].head(10))
+
+          url = "https://api.mexc.com/api/v3/exchangeInfo"
+          mexc_data = requests.get(url, timeout=15).json().get("symbols", [])
+          mexc_df = pd.DataFrame(mexc_data)
+          print(f"✅ MEXC sample: {len(mexc_df)} Paare")
+          print(mexc_df[["symbol", "base", "quote"]].head(10))
+
+          def normalize_symbol(sym):
+              if not isinstance(sym, str):
+                  return ""
+              sym = sym.upper().strip()
+              sym = sym.replace("/", "_").replace("-", "_")
+              for suffix in ["_USDT", "_USDC", "_USD", "_BTC", "_ETH"]:
+                  if sym.endswith(suffix):
+                      sym = sym.replace(suffix, "")
+              while sym and not sym[-1].isalpha():
+                  sym = sym[:-1]
+              return sym
+
+          cg_df["norm_symbol"] = cg_df["symbol"].apply(normalize_symbol)
+          mexc_df["norm_base"] = mexc_df["base"].apply(normalize_symbol)
+          mexc_df["norm_quote"] = mexc_df["quote"].apply(
+              lambda x: str(x).upper() if isinstance(x, str) else "UNKNOWN"
+          )
+
+          cg_syms = set(cg_df["norm_symbol"])
+          mexc_bases = set(mexc_df["norm_base"])
+          intersection = cg_syms.intersection(mexc_bases)
+          only_cg = cg_syms - mexc_bases
+          only_mexc = mexc_bases - cg_syms
+
+          print(f"🟢 Schnittmenge: {len(intersection)} gemeinsame Symbole")
+          print(f"🔴 Nur CoinGecko: {len(only_cg)} | Nur MEXC: {len(only_mexc)}")
+          print("Beispiele gemeinsamer Symbole:", list(sorted(intersection))[:20])
+          print("Beispiele, die bei CoinGecko fehlen:", list(sorted(only_mexc))[:20])
+          print("Beispiele, die bei MEXC fehlen:", list(sorted(only_cg))[:20])
+          EOF
