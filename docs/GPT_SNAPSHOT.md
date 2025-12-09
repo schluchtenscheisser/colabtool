@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 3a73784fed6696ec6d07d527904e0d39ca4ba4db_
+_Generated from commit: 823b6fc358e55b07c0e1aaba56a3e1d7d44c83bf_
 
 ## pyproject.toml
 
@@ -510,7 +510,7 @@ def export_snapshot(df, export_path: str | None = None):
 
 ## src/colabtool/features.py
 
-SHA256: `424fac055ca89d2e3fe7514fd47bc3b1bcbc0a2dcb505ea3e13244a0affcf12c`
+SHA256: `0b86844fad4570f47242437044096f9c7cea0aa9a1e7ba9fa297a64f228d88a4`
 
 ```python
 # modules/features.py
@@ -613,6 +613,10 @@ def exclusion_mask(df: pd.DataFrame, cats: pd.Series) -> pd.Series:
 
 # ---------- Feature-Block ----------
 def compute_feature_block(df_in: pd.DataFrame) -> pd.DataFrame:
+    """
+    Berechnet abgeleitete Features für das Scoring.
+    Enthält robuste Momentum-Logik mit CoinGecko- und Fallback-Unterstützung.
+    """
     import numpy as np
     import pandas as pd
     from colabtool.data_sources import cg_market_chart
@@ -632,38 +636,32 @@ def compute_feature_block(df_in: pd.DataFrame) -> pd.DataFrame:
         ).replace([np.inf, -np.inf], np.nan)
 
     # --- Momentum (direkt von CoinGecko, falls vorhanden) ---
-    if "price_change_percentage_7d_in_currency" in d.columns:
-        d["mom_7d_pct"] = pd.to_numeric(
-            d["price_change_percentage_7d_in_currency"], errors="coerce"
-        )
-    else:
-        d["mom_7d_pct"] = np.nan
+    d["mom_7d_pct"] = pd.to_numeric(
+        d.get("price_change_percentage_7d_in_currency"), errors="coerce"
+    )
+    d["mom_30d_pct"] = pd.to_numeric(
+        d.get("price_change_percentage_30d_in_currency"), errors="coerce"
+    )
 
-    if "price_change_percentage_30d_in_currency" in d.columns:
-        d["mom_30d_pct"] = pd.to_numeric(
-            d["price_change_percentage_30d_in_currency"], errors="coerce"
-        )
-    else:
-        d["mom_30d_pct"] = np.nan
+    # --- Sicherstellen, dass NaN als float erkannt werden ---
+    d["mom_7d_pct"] = pd.to_numeric(d["mom_7d_pct"], errors="coerce")
+    d["mom_30d_pct"] = pd.to_numeric(d["mom_30d_pct"], errors="coerce")
 
-    # --- Fallback, falls CoinGecko keine oder kaum Momentum-Daten liefert ---
+    # --- Anteil fehlender Werte ---
     missing_ratio_7d = d["mom_7d_pct"].isna().mean()
     missing_ratio_30d = d["mom_30d_pct"].isna().mean()
 
+    # --- Fallback aktivieren, wenn zu viele Werte fehlen (>95%) ---
     if (missing_ratio_7d > 0.95) or (missing_ratio_30d > 0.95):
         print(
             f"⚙️ Momentum-Fallback aktiv: 7d missing={missing_ratio_7d:.1%}, "
             f"30d missing={missing_ratio_30d:.1%}"
         )
 
-        from colabtool.data_sources import cg_market_chart
-
         for cid in d["id"]:
             try:
                 chart = cg_market_chart(cid, days=30)
-                prices = [
-                    p[1] for p in chart.get("prices", []) if isinstance(p, list)
-                ]
+                prices = [p[1] for p in chart.get("prices", []) if isinstance(p, list)]
 
                 if not prices or len(prices) < 8:
                     continue  # zu wenige Datenpunkte
@@ -678,7 +676,7 @@ def compute_feature_block(df_in: pd.DataFrame) -> pd.DataFrame:
                     mom30 = (prices[-1] / prices[-31] - 1) * 100
                     d.loc[d["id"] == cid, "mom_30d_pct"] = mom30
                 else:
-                    # Wenn keine 30d-Historie, nimm 7d als Proxy
+                    # Wenn keine 30d-Historie, nutze 7d als Proxy
                     if not pd.isna(d.loc[d["id"] == cid, "mom_7d_pct"]).all():
                         d.loc[d["id"] == cid, "mom_30d_pct"] = mom7
 
@@ -686,12 +684,19 @@ def compute_feature_block(df_in: pd.DataFrame) -> pd.DataFrame:
                 print(f"⚠️ Momentum-Fallback-Fehler bei {cid}: {e}")
                 continue
 
+    else:
+        print(
+            f"✅ Momentum-Daten direkt von CoinGecko: "
+            f"7d missing={missing_ratio_7d:.1%}, 30d missing={missing_ratio_30d:.1%}"
+        )
 
     # --- slope30 bleibt als Alias für 30d-Momentum erhalten (Kompatibilität) ---
     d["slope30"] = d["mom_30d_pct"]
 
     # --- ATH Drawdown ---
-    d["ath_drawdown_pct"] = pd.to_numeric(d.get("ath_change_percentage"), errors="coerce")
+    d["ath_drawdown_pct"] = pd.to_numeric(
+        d.get("ath_change_percentage"), errors="coerce"
+    )
 
     # --- Circulating Supply (optional, falls verfügbar) ---
     d["circ_pct"] = np.nan
