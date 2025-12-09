@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: cfa46c751a8354ace05d08b870e8e91782c1a11c_
+_Generated from commit: 3b240b0e56211cf16eeabbc6c457cd3c800d67b8_
 
 ## pyproject.toml
 
@@ -1658,7 +1658,7 @@ def add_buzz_metrics_for_candidates(
 
 ## src/colabtool/data_sources.py
 
-SHA256: `b8f64b040c4eb02a9cc5cea3313d1adb68b9a9244d51db7ecb0c6852eefb61ed`
+SHA256: `7d7b5433ab7d63d29be3495fed294c43efa416cca64c7978a93bd89ef6ee9b95`
 
 ```python
 # modules/data_sources.py
@@ -1924,6 +1924,19 @@ def cg_markets(vs: str = "usd", pages: int = 4, cache_hours: int = 24) -> pd.Dat
                 raise ValueError(f"❌ Fehler beim Laden von CoinGecko Seite {page}: {e}")
 
         df = pd.DataFrame(all_pages)
+        # --- Sicherstellen, dass Momentum-Felder aus CoinGecko erhalten bleiben ---
+        momentum_cols = [
+            "price_change_percentage_1h_in_currency",
+            "price_change_percentage_24h_in_currency",
+            "price_change_percentage_7d_in_currency",
+            "price_change_percentage_30d_in_currency",
+        ]
+
+        # CoinGecko liefert diese Felder manchmal nur für Teilmengen – fehlende Spalten ergänzen:
+        for col in momentum_cols:
+            if col not in df.columns:
+                df[col] = np.nan
+                
         df.to_csv(cache_path, index=False)
         print(f"✅ Live CoinGecko-Daten geladen ({len(df)} Einträge) und gecached")
 
