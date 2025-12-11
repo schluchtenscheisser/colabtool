@@ -1,10 +1,10 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 04c18fb1fdb43913b467584000ff95949088f346_
+_Generated from commit: 93665c3a0aee2591d735fc9fa97bbb92c9f520dc_
 
 ## pyproject.toml
 
-SHA256: `acc21632a5f2ee6a51cc8fea57eaa79ae706131fced13d34fd895f420652dc74`
+SHA256: `4ad6c74c5b0639d83699d6cf11bc36ee17654d340422f01bea9be3f6f1fe6aeb`
 
 ```toml
 [build-system]
@@ -25,7 +25,7 @@ dependencies = [
   "feedparser",
   "xlsxwriter",
   "openpyxl",
-  "nbformat"
+  "nbformat",
   "python-dotenv"
 ]
 
