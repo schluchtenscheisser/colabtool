@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 32fc2e3c5078c4c654a7ffb2adf3dfe6b15b67b5_
+_Generated from commit: d65e636d3d452eef433cb1dbd3476ab553fa1903_
 
 ## pyproject.toml
 
@@ -35,7 +35,7 @@ where = ["src"]
 
 ## requirements.txt
 
-SHA256: `fe707c4e95377f8a6c3cf69e72b214634ceecb31d2eb48610639bb42cb870c56`
+SHA256: `9bca092dfcb091f3acb991735b88c36a98b781fad57a4a6e41d368e4676652fd`
 
 ```text
 numpy
@@ -45,6 +45,7 @@ feedparser
 xlsxwriter
 openpyxl
 nbformat
+python-dotenv>=1.0.0
 
 ```
 
