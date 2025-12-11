@@ -16,7 +16,7 @@ dependencies = [
   "feedparser",
   "xlsxwriter",
   "openpyxl",
-  "nbformat"
+  "nbformat",
   "python-dotenv"
 ]
 
