@@ -1,10 +1,10 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: d65e636d3d452eef433cb1dbd3476ab553fa1903_
+_Generated from commit: 04c18fb1fdb43913b467584000ff95949088f346_
 
 ## pyproject.toml
 
-SHA256: `551956a7dc8730ec278037ac4aeebe7677e495e7817a2ea9c2e308b6e7ee8c4a`
+SHA256: `acc21632a5f2ee6a51cc8fea57eaa79ae706131fced13d34fd895f420652dc74`
 
 ```toml
 [build-system]
@@ -26,6 +26,7 @@ dependencies = [
   "xlsxwriter",
   "openpyxl",
   "nbformat"
+  "python-dotenv"
 ]
 
 [tool.setuptools.packages.find]
