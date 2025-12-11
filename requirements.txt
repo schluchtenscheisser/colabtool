@@ -5,3 +5,4 @@ feedparser
 xlsxwriter
 openpyxl
 nbformat
+python-dotenv>=1.0.0
