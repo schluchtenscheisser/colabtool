@@ -28,7 +28,7 @@ os.environ.update({
 })
 
 # Core-Imports
-from colabtool.data_sources import cg_markets, map_mexc_pairs, get_alias_seed
+from colabtool.data_sources_cmc import cg_markets, map_mexc_pairs, get_alias_seed
 from colabtool.pre_universe import apply_pre_universe_filters
 from colabtool.features import compute_feature_block
 from colabtool.breakout import compute_breakout_for_ids
