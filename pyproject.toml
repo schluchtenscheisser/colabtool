@@ -17,6 +17,7 @@ dependencies = [
   "xlsxwriter",
   "openpyxl",
   "nbformat"
+  "python-dotenv"
 ]
 
 [tool.setuptools.packages.find]
