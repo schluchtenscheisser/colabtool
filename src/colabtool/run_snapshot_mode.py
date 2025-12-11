@@ -11,6 +11,8 @@ from datetime import datetime
 from pathlib import Path
 import pandas as pd
 
+logging.info("🟢 Snapshot Mode nutzt CoinMarketCap als Primärquelle.")
+
 # ENV-Vars & API-Verhalten (Standard-Defaults)
 os.environ.update({
     "ENABLE_PIT_CATEGORIES": "1",
@@ -28,7 +30,8 @@ os.environ.update({
 })
 
 # Core-Imports
-from colabtool.data_sources_cmc import cg_markets, map_mexc_pairs, get_alias_seed
+from colabtool.data_sources_cmc import fetch_cmc_markets, map_mexc_pairs, map_tvl
+from colabtool.data_sources import get_alias_seed  # bleibt erhalten
 from colabtool.pre_universe import apply_pre_universe_filters
 from colabtool.features import compute_feature_block
 from colabtool.breakout import compute_breakout_for_ids
@@ -113,8 +116,8 @@ def run_snapshot(mode: str = "standard", offline: bool = False) -> Path:
             },
         ])
     else:
-        df = cg_markets(vs="usd", pages=4)
-        logging.info(f"✅ cg_markets: {len(df)} Coins geladen")
+        df = fetch_cmc_markets(pages=8, limit=250)
+        logging.info(f"✅ fetch_cmc_markets: {len(df)} Coins geladen.")
 
     # ------------------------------
     # 2️⃣ Schema-Validierung
@@ -189,7 +192,7 @@ def run_snapshot(mode: str = "standard", offline: bool = False) -> Path:
     # 7️⃣ CSV-Dateien (nur Live)
     # ------------------------------
     if effective_mode != "offline":
-        cg_path = snapshot_dir / "cg_markets.csv"
+        cg_path = snapshot_dir / "cmc_markets.csv"
         mexc_path = snapshot_dir / "mexc_pairs.csv"
         alias_path = snapshot_dir / "seed_alias.csv"
 
