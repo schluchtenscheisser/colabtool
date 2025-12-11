@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 196a0990210ea877ebcdb52654edea0249ee49b4_
+_Generated from commit: d421896701ddac43515774202ce21d0b6be83aef_
 
 ## pyproject.toml
 
@@ -293,7 +293,7 @@ if __name__ == "__main__":
 
 ## src/colabtool/run_snapshot_mode.py
 
-SHA256: `bcfcb3b3ebcc09d3f62094bb491dfbb449cda81d2e9f3f72bcf88c8be42d1fcb`
+SHA256: `738bbc272b5415697e41e8e8c0424647ce01319f374665ff96dcc7ea935b82c7`
 
 ```python
 """
@@ -326,7 +326,7 @@ os.environ.update({
 })
 
 # Core-Imports
-from colabtool.data_sources import cg_markets, map_mexc_pairs, get_alias_seed
+from colabtool.data_sources_cmc import cg_markets, map_mexc_pairs, get_alias_seed
 from colabtool.pre_universe import apply_pre_universe_filters
 from colabtool.features import compute_feature_block
 from colabtool.breakout import compute_breakout_for_ids
