@@ -97,92 +97,95 @@ def exclusion_mask(df: pd.DataFrame, cats: pd.Series) -> pd.Series:
     return _ensure_series(m.astype(bool), df.index)
 
 # ---------- Feature-Block ----------
+# ---------------------------------------------------------------------
+# 📊 Neue Hybrid-Feature-Logik: MEXC-Klines + CMC-Fallback
+# ---------------------------------------------------------------------
+import requests
+import numpy as np
+import pandas as pd
+import logging
+from typing import Optional, Dict, Any, List
+
+MEXC_KLINES_URL = "https://api.mexc.com/api/v3/klines"
+
+def fetch_mexc_klines(symbol: str, interval: str = "1d", limit: int = 60) -> Optional[pd.DataFrame]:
+    """
+    Holt historische Candle-Daten von MEXC.
+    Gibt DataFrame mit Spalten [timestamp, open, high, low, close, volume] zurück.
+    """
+    try:
+        resp = requests.get(MEXC_KLINES_URL, params={"symbol": symbol.upper(), "interval": interval, "limit": limit}, timeout=10)
+        if resp.status_code != 200:
+            logging.warning(f"[MEXC] Klines-Fehler {symbol}: {resp.status_code}")
+            return None
+        data = resp.json()
+        df = pd.DataFrame(data, columns=["timestamp", "open", "high", "low", "close", "volume",
+                                         "_1", "_2", "_3", "_4", "_5", "_6"])
+        df = df[["timestamp", "open", "high", "low", "close", "volume"]].astype(float)
+        return df
+    except Exception as e:
+        logging.warning(f"[MEXC] Klines-Abfrage fehlgeschlagen ({symbol}): {e}")
+        return None
+
+
+def compute_mexc_features(df: pd.DataFrame) -> Dict[str, float]:
+    """Berechnet Momentum, Volumenbeschleunigung, ATH-Drawdown aus MEXC-Klines"""
+    if df is None or df.empty:
+        return {"mom_7d_pct": np.nan, "mom_30d_pct": np.nan, "vol_acc": np.nan, "ath_drawdown_pct": np.nan}
+
+    closes = df["close"].values
+    vols = df["volume"].values
+    if len(closes) < 30:
+        return {"mom_7d_pct": np.nan, "mom_30d_pct": np.nan, "vol_acc": np.nan, "ath_drawdown_pct": np.nan}
+
+    mom_7d_pct = (closes[-1] / closes[-8] - 1) * 100
+    mom_30d_pct = (closes[-1] / closes[-31] - 1) * 100
+    vol_acc = np.mean(vols[-7:]) / np.mean(vols[-30:]) if np.mean(vols[-30:]) > 0 else np.nan
+    ath_drawdown_pct = (closes[-1] / np.max(closes) - 1) * 100
+
+    return {
+        "mom_7d_pct": mom_7d_pct,
+        "mom_30d_pct": mom_30d_pct,
+        "vol_acc": vol_acc,
+        "ath_drawdown_pct": ath_drawdown_pct,
+    }
+
+
 def compute_feature_block(df_in: pd.DataFrame) -> pd.DataFrame:
     """
-    Berechnet abgeleitete Features für das Scoring.
-    Enthält robuste Momentum-Logik mit CoinGecko- und Fallback-Unterstützung.
+    Neues Feature-Block-Modul:
+    - bevorzugt Momentum & Volumen aus MEXC-Klines
+    - fallback auf CMC-Prozentwerte
     """
-    import numpy as np
-    import pandas as pd
-    from colabtool.data_sources import cg_market_chart
+    logging.info("🔧 compute_feature_block (Hybrid CMC+MEXC) gestartet ...")
+    df = df_in.copy()
 
-    d = df_in.copy()
+    mom7, mom30, vol_acc, ath_dd = [], [], [], []
 
-    # --- Basismetriken ---
-    d["market_cap"] = pd.to_numeric(d.get("market_cap"), errors="coerce")
-    d["total_volume"] = pd.to_numeric(
-        d.get("total_volume", d.get("volume")), errors="coerce"
-    )
+    for _, row in df.iterrows():
+        symbol = row["symbol"].upper() + "USDT"
+        kl = fetch_mexc_klines(symbol)
 
-    # --- Volumen/Marktkapitalisierung ---
-    with np.errstate(divide="ignore", invalid="ignore"):
-        d["volume_mc_ratio"] = (
-            d["total_volume"] / d["market_cap"]
-        ).replace([np.inf, -np.inf], np.nan)
+        if kl is not None and len(kl) >= 30:
+            f = compute_mexc_features(kl)
+            mom7.append(f["mom_7d_pct"])
+            mom30.append(f["mom_30d_pct"])
+            vol_acc.append(f["vol_acc"])
+            ath_dd.append(f["ath_drawdown_pct"])
+        else:
+            mom7.append(row.get("price_change_percentage_7d_in_currency", np.nan))
+            mom30.append(row.get("price_change_percentage_30d_in_currency", np.nan))
+            vol_acc.append(np.nan)
+            ath_dd.append(np.nan)
 
-    # --- Momentum (direkt von CoinGecko, falls vorhanden) ---
-    d["mom_7d_pct"] = d.get("price_change_percentage_7d_in_currency", np.nan)
-    d["mom_30d_pct"] = d.get("price_change_percentage_30d_in_currency", np.nan)
+    df["mom_7d_pct"] = mom7
+    df["mom_30d_pct"] = mom30
+    df["vol_acc"] = vol_acc
+    df["ath_drawdown_pct"] = ath_dd
 
-    # --- Leere Strings und Sonderwerte in NaN umwandeln ---
-    for col in ["mom_7d_pct", "mom_30d_pct"]:
-        d[col] = d[col].replace(["", " ", "None", "null", "NaN", None], np.nan)
-        d[col] = pd.to_numeric(d[col], errors="coerce")
-
-    # --- Fehlende Werte berechnen ---
-    missing_ratio_7d = d["mom_7d_pct"].isna().mean()
-    missing_ratio_30d = d["mom_30d_pct"].isna().mean()
-
-    # --- Momentum-Fallback ---
-    if (missing_ratio_7d > 0.95) or (missing_ratio_30d > 0.95):
-        print(
-            f"⚙️ Momentum-Fallback aktiv: 7d missing={missing_ratio_7d:.1%}, "
-            f"30d missing={missing_ratio_30d:.1%}"
-        )
-
-        for cid in d["id"]:
-            try:
-                chart = cg_market_chart(cid, days=30)
-                prices = [p[1] for p in chart.get("prices", []) if isinstance(p, list)]
-
-                if not prices or len(prices) < 8:
-                    continue  # zu wenige Datenpunkte
-
-                # --- Momentum 7d ---
-                if len(prices) >= 8:
-                    mom7 = (prices[-1] / prices[-8] - 1) * 100
-                    d.loc[d["id"] == cid, "mom_7d_pct"] = mom7
-
-                # --- Momentum 30d ---
-                if len(prices) >= 31:
-                    mom30 = (prices[-1] / prices[-31] - 1) * 100
-                    d.loc[d["id"] == cid, "mom_30d_pct"] = mom30
-                else:
-                    if not pd.isna(d.loc[d["id"] == cid, "mom_7d_pct"]).all():
-                        d.loc[d["id"] == cid, "mom_30d_pct"] = mom7
-
-            except Exception as e:
-                print(f"⚠️ Momentum-Fallback-Fehler bei {cid}: {e}")
-                continue
-    else:
-        print(
-            f"✅ Momentum-Daten direkt von CoinGecko: "
-            f"7d missing={missing_ratio_7d:.1%}, 30d missing={missing_ratio_30d:.1%}"
-        )
-
-    # --- slope30 bleibt als Alias für 30d-Momentum erhalten (Kompatibilität) ---
-    d["slope30"] = d["mom_30d_pct"]
-
-    # --- ATH Drawdown ---
-    d["ath_drawdown_pct"] = pd.to_numeric(
-        d.get("ath_change_percentage"), errors="coerce"
-    )
-
-    # --- Circulating Supply (optional, falls verfügbar) ---
-    d["circ_pct"] = np.nan
-
-    return d
-
+    logging.info(f"✅ compute_feature_block abgeschlossen – {len(df)} Coins verarbeitet.")
+    return df
+    
 # ---------- Segmentierung ----------
 def tag_segment(row) -> str:
     try:
