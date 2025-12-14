@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 4424ea3252f6f1e13694bc31ab99b27daf9dc269_
+_Generated from commit: fc9c3fd6a2ea0dc55d4972d38bf66f27d679d2a9_
 
 ## pyproject.toml
 
@@ -734,7 +734,7 @@ def export_snapshot(df, export_path: str | None = None):
 
 ## src/colabtool/features.py
 
-SHA256: `fa263aac943509473b0120169d9240eacc6f5bb42900ec8e035a59a0a4ff72ab`
+SHA256: `e11c4380a16e5bd2658722a2f9526a5f6f8f22c9ec0b8152d531ca362dbb11ec`
 
 ```python
 # modules/features.py
@@ -851,9 +851,20 @@ def fetch_mexc_klines(symbol: str, interval: str = "1d", limit: int = 60) -> Opt
     """
     Holt historische Candle-Daten von MEXC.
     Gibt DataFrame mit Spalten [timestamp, open, high, low, close, volume] zurück.
+    Gibt None zurück, wenn kein Pair existiert (HTTP 400).
     """
     try:
-        resp = requests.get(MEXC_KLINES_URL, params={"symbol": symbol.upper(), "interval": interval, "limit": limit}, timeout=10)
+        resp = requests.get(
+            MEXC_KLINES_URL,
+            params={"symbol": symbol.upper(), "interval": interval, "limit": limit},
+            timeout=10
+        )
+
+        # --- Kein Handelspaar vorhanden ---
+        if resp.status_code == 400:
+            logging.info(f"[MEXC] Kein Klines-Listing für {symbol} – Fallback auf CMC aktiv.")
+            return None
+
         if resp.status_code != 200:
             logging.warning(f"[MEXC] Klines-Fehler {symbol}: {resp.status_code}")
             return None
@@ -863,15 +874,16 @@ def fetch_mexc_klines(symbol: str, interval: str = "1d", limit: int = 60) -> Opt
             logging.warning(f"[MEXC] Klines-Response leer oder ungültig für {symbol}")
             return None
 
-        # MEXC liefert typischerweise 8 Spalten, aber wir mappen nur die relevanten
+        # Dynamisches Spalten-Mapping (8 Werte bei MEXC)
         cols = ["timestamp", "open", "high", "low", "close", "volume", "close_time", "quote_volume"]
-        df = pd.DataFrame(data, columns=cols[:len(data[0])])  # dynamisch anpassen
+        df = pd.DataFrame(data, columns=cols[:len(data[0])])
         df = df[["timestamp", "open", "high", "low", "close", "volume"]].astype(float)
         return df
 
     except Exception as e:
         logging.warning(f"[MEXC] Klines-Abfrage fehlgeschlagen ({symbol}): {e}")
         return None
+
 
 def compute_mexc_features(df: pd.DataFrame) -> Dict[str, float]:
     """Berechnet Momentum, Volumenbeschleunigung, ATH-Drawdown aus MEXC-Klines"""
@@ -910,18 +922,21 @@ def compute_feature_block(df_in: pd.DataFrame) -> pd.DataFrame:
     for _, row in df.iterrows():
         symbol = row["symbol"].upper() + "USDT"
         kl = fetch_mexc_klines(symbol)
-
+        
         if kl is not None and len(kl) >= 30:
             f = compute_mexc_features(kl)
             mom7.append(f["mom_7d_pct"])
             mom30.append(f["mom_30d_pct"])
             vol_acc.append(f["vol_acc"])
             ath_dd.append(f["ath_drawdown_pct"])
+            logging.debug(f"[MEXC] ✅ Klines verarbeitet: {symbol}")
         else:
+            # Fallback auf CMC-Prozentwerte
             mom7.append(row.get("price_change_percentage_7d_in_currency", np.nan))
             mom30.append(row.get("price_change_percentage_30d_in_currency", np.nan))
             vol_acc.append(np.nan)
             ath_dd.append(np.nan)
+            logging.info(f"[MEXC] ⚙️ Fallback auf CMC-Daten aktiv für {symbol}")
 
     df["mom_7d_pct"] = mom7
     df["mom_30d_pct"] = mom30
