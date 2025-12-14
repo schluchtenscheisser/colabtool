@@ -118,15 +118,21 @@ def fetch_mexc_klines(symbol: str, interval: str = "1d", limit: int = 60) -> Opt
         if resp.status_code != 200:
             logging.warning(f"[MEXC] Klines-Fehler {symbol}: {resp.status_code}")
             return None
+
         data = resp.json()
-        df = pd.DataFrame(data, columns=["timestamp", "open", "high", "low", "close", "volume",
-                                         "_1", "_2", "_3", "_4", "_5", "_6"])
+        if not data or not isinstance(data, list):
+            logging.warning(f"[MEXC] Klines-Response leer oder ungültig für {symbol}")
+            return None
+
+        # MEXC liefert typischerweise 8 Spalten, aber wir mappen nur die relevanten
+        cols = ["timestamp", "open", "high", "low", "close", "volume", "close_time", "quote_volume"]
+        df = pd.DataFrame(data, columns=cols[:len(data[0])])  # dynamisch anpassen
         df = df[["timestamp", "open", "high", "low", "close", "volume"]].astype(float)
         return df
+
     except Exception as e:
         logging.warning(f"[MEXC] Klines-Abfrage fehlgeschlagen ({symbol}): {e}")
         return None
-
 
 def compute_mexc_features(df: pd.DataFrame) -> Dict[str, float]:
     """Berechnet Momentum, Volumenbeschleunigung, ATH-Drawdown aus MEXC-Klines"""
