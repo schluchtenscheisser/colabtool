@@ -71,6 +71,32 @@ jobs:
               except Exception as ex:
                 parts += [f"_nb read error: {ex}_\n\n"]
 
+          import re
+
+          def extract_functions(pyfile: Path):
+              text = pyfile.read_text(encoding="utf-8", errors="ignore")
+              funcs = re.findall(r"^def ([a-zA-Z_][a-zA-Z0-9_]*)", text, re.MULTILINE)
+              classes = re.findall(r"^class ([a-zA-Z_][a-zA-Z0-9_]*)", text, re.MULTILINE)
+              return funcs, classes
+
+          modules = []
+          for p in Path("src").rglob("*.py"):
+              funcs, classes = extract_functions(p)
+              modules.append({
+                  "path": str(p),
+                  "functions": funcs,
+                  "classes": classes,
+              })
+
+          parts.append("\n## 🧩 Modul- & Funktionsübersicht (ChatGPT Context Map)\n")
+          parts.append("| Modul | Funktionen | Klassen |\n")
+          parts.append("|-------|-------------|----------|\n")
+
+          for m in modules:
+              parts.append(
+                  f"| `{m['path']}` | {', '.join(m['functions']) or '-'} | {', '.join(m['classes']) or '-'} |\n"
+              )
+          
           out.write_text("".join(parts), encoding="utf-8")
           print(f"Wrote {out}")
           PY
