@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 6784ba1b3cbb6c6aed432411f6d3cfd6357976bf_
+_Generated from commit: 8b4b75427fb99ba3fb4891b74aca33eb685f9e87_
 
 ## pyproject.toml
 
@@ -5846,3 +5846,27 @@ except Exception:
 
 ```
 
+
+## 🧩 Modul- & Funktionsübersicht (ChatGPT Context Map)
+| Modul | Funktionen | Klassen |
+|-------|-------------|----------|
+| `src/colabtool/data_sources_cmc.py` | _log, _on_get, fetch_cmc_markets, _fetch_mexc_pairs, map_mexc_pairs, map_tvl, load_or_fetch_markets, write_cache | - |
+| `src/colabtool/run_snapshot_mode.py` | validate_scores, run_snapshot | - |
+| `src/colabtool/export.py` | _safe_col_width, reorder_columns, write_sheet, write_meta_sheet, create_full_excel_export, export_snapshot | - |
+| `src/colabtool/features.py` | _ensure_series, _num_series, _lc, is_stable_like, is_wrapped_like, peg_like_mask, exclusion_mask, fetch_mexc_klines, compute_mexc_features, compute_feature_block, tag_segment | - |
+| `src/colabtool/breakout.py` | _mexc_klines, _valid_pair, _to_df, _pct_change, _rolling_max, _percentile_rank, _zscore, _beta, _features_from_klines, _prep_betas, compute_breakout_for_ids | - |
+| `src/colabtool/exchanges.py` | _is_colab, _resolve_seed_dir, _is_leveraged_symbol, _http_json, _listing_from_exchange_info, _listing_from_ticker24, _load_mexc_listing, _load_seed_overrides, _apply_overrides, _choose_preferred_pair, _collect_collisions_in_listing, apply_mexc_filter, export_mexc_seed_template, fetch_mexc_pairs | - |
+| `src/colabtool/utilities.py` | _is_colab, _resolve_cache_dir, safe_div, winsor_minmax, _cache_key, http_get_json | - |
+| `src/colabtool/buzz.py` | _is_colab, _resolve_seed_dir, _env_str, _env_float, _env_json_dict, _parse_entry, fetch_rss_all, _load_alias_seed, _compile_alias_regex, _age_weight, _pub_weight, _match_article, _collect_scores_for_ids, add_buzz_metrics_for_candidates | - |
+| `src/colabtool/data_sources.py` | _env_str, _env_bool, _env_int, _env_float, _is_colab, _cg_throttle, _resolve_seed_dir, _sleep_min_interval, _one_get, _sanitize_params_for_free, _cg_get, _get_snapshot_dir, _make_cache_path, _chart_cache_path, cg_markets, enrich_categories, map_tvl, update_seen_ids, cg_market_chart, persist_pit_snapshot, get_alias_seed, map_mexc_pairs, ensure_seed_alias_exists | - |
+| `src/colabtool/pre_universe.py` | _is_leveraged, apply_pre_universe_filters, attach_categories | - |
+| `src/colabtool/scores.py` | _ensure_series, _winsorize, _mc_bucket, _z_by_bucket, _safe_num, _align_bool_mask, score_block, compute_early_score, compute_scores | - |
+| `src/colabtool/run_snapshot_mode_patch.py` | run_with_scoring | - |
+| `src/colabtool/category_providers.py` | _now_utc, _load_cache, _save_cache, _cache_get, _cache_set, _infer_from_tags, _norm, _cmc_get_map_by_symbols, _messari_get_profile, _paprika_find_id, _paprika_get_coin, enrich_categories_hybrid, get_cg_categories | - |
+| `src/colabtool/cg_cache_patch.py` | setup_cg_chart_cache | - |
+| `src/colabtool/export_helpers.py` | _cols, make_fulldata | - |
+| `src/colabtool/pit_snapshot.py` | save_snapshot, export_excel_snapshot, run | - |
+| `src/colabtool/backtest.py` | _forward_return_from_chart, backtest_on_snapshot | - |
+| `src/colabtool/__init__.py` | - | - |
+| `src/colabtool/utils/validation.py` | ensure_schema, validate_required_columns, validate_nonempty | - |
+| `src/colabtool/utils/__init__.py` | - | - |
