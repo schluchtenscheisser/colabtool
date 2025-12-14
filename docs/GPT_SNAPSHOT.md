@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 51f06f8e409bc94153359dd0442d8b0ea50bbcd6_
+_Generated from commit: d997ac63471e84a0cc892d9c80ea3408387f49d5_
 
 ## pyproject.toml
 
@@ -52,11 +52,18 @@ python-dotenv>=1.0.0
 
 ## README.md
 
-SHA256: `92a90907dc37f03cfdd19ef72572d2a76f896efcc0bfcaf9be0d962b556dbbe1`
+SHA256: `e7d878c54b1f258abc8a559177d53829a435d3d474670075df3ae425fa1525d6`
 
 ```markdown
 
 <!-- ChatGPT Context Overview -->
+
+> ⚙️ **Hinweis für ChatGPT**  
+> Diese README dient als **zentrale Wissensquelle** („Single Source of Truth“)  
+> für das Repository [`schluchtenscheisser/colabtool`](https://github.com/schluchtenscheisser/colabtool).  
+> GPT-Instanzen sollen diese Datei **zuerst vollständig lesen**, bevor sie Code ändern oder Fragen beantworten.  
+> Ergänzende technische Details stehen in [`docs/GPT_SNAPSHOT.md`](docs/GPT_SNAPSHOT.md).
+
 
 # 🧠 Early Signal Altcoin Scanner ("colabtool")
 
