@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: d8a55842b970f4cce009910ccfb87695a6edfc82_
+_Generated from commit: 6784ba1b3cbb6c6aed432411f6d3cfd6357976bf_
 
 ## pyproject.toml
 
@@ -775,7 +775,7 @@ def export_snapshot(df, export_path: str | None = None):
 
 ## src/colabtool/features.py
 
-SHA256: `e11c4380a16e5bd2658722a2f9526a5f6f8f22c9ec0b8152d531ca362dbb11ec`
+SHA256: `e556edc720ead93132d6f40d1eb1ab0f293f8b7592fa91f1c80a6f9472ec0f3f`
 
 ```python
 # modules/features.py
@@ -939,12 +939,17 @@ def compute_mexc_features(df: pd.DataFrame) -> Dict[str, float]:
     mom_7d_pct = (closes[-1] / closes[-8] - 1) * 100
     mom_30d_pct = (closes[-1] / closes[-31] - 1) * 100
     vol_acc = np.mean(vols[-7:]) / np.mean(vols[-30:]) if np.mean(vols[-30:]) > 0 else np.nan
-    ath_drawdown_pct = (closes[-1] / np.max(closes) - 1) * 100
+    ath = np.max(closes)
+    ath_idx = int(np.argmax(closes))
+    ath_date = df["time"].iloc[ath_idx]
+    ath_drawdown_pct = (closes[-1] / ath - 1) * 100
 
     return {
         "mom_7d_pct": mom_7d_pct,
         "mom_30d_pct": mom_30d_pct,
         "vol_acc": vol_acc,
+        "ath": ath,
+        "ath_date": ath_date,
         "ath_drawdown_pct": ath_drawdown_pct,
     }
 
@@ -962,22 +967,28 @@ def compute_feature_block(df_in: pd.DataFrame) -> pd.DataFrame:
 
     for _, row in df.iterrows():
         symbol = row["symbol"].upper() + "USDT"
-        kl = fetch_mexc_klines(symbol)
-        
-        if kl is not None and len(kl) >= 30:
-            f = compute_mexc_features(kl)
-            mom7.append(f["mom_7d_pct"])
-            mom30.append(f["mom_30d_pct"])
-            vol_acc.append(f["vol_acc"])
-            ath_dd.append(f["ath_drawdown_pct"])
-            logging.debug(f"[MEXC] ✅ Klines verarbeitet: {symbol}")
-        else:
-            # Fallback auf CMC-Prozentwerte
-            mom7.append(row.get("price_change_percentage_7d_in_currency", np.nan))
-            mom30.append(row.get("price_change_percentage_30d_in_currency", np.nan))
-            vol_acc.append(np.nan)
-            ath_dd.append(np.nan)
-            logging.info(f"[MEXC] ⚙️ Fallback auf CMC-Daten aktiv für {symbol}")
+    kl = fetch_mexc_klines(symbol)
+    if kl is not None and len(kl) >= 5:
+        f = compute_mexc_features(kl)
+        mom7.append(f["mom_7d_pct"])
+        mom30.append(f["mom_30d_pct"])
+        vol_acc.append(f["vol_acc"])
+        ath_dd.append(f["ath_drawdown_pct"])
+        # Neue Felder
+        ath_vals.append(f["ath"])
+        ath_dates.append(f["ath_date"])
+        price_sources.append("MEXC")
+        logging.debug(f"[MEXC] ✅ Klines verarbeitet: {symbol}")
+    else:
+        # Fallback auf CMC-Prozentwerte
+        mom7.append(row.get("price_change_percentage_7d_in_currency", np.nan))
+        mom30.append(row.get("price_change_percentage_30d_in_currency", np.nan))
+        vol_acc.append(np.nan)
+        ath_dd.append(np.nan)
+        ath_vals.append(np.nan)
+        ath_dates.append(np.nan)
+        price_sources.append("CMC")
+        logging.info(f"[MEXC] ⚙️ Fallback auf CMC-Daten: {symbol}")
 
     df["mom_7d_pct"] = mom7
     df["mom_30d_pct"] = mom30
