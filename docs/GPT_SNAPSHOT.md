@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 9747a25bc2fe856abc8a3f1ee958c2c86c743653_
+_Generated from commit: a53c0b4b18c912e7406167cd8a679a2c0269139a_
 
 ## pyproject.toml
 
@@ -76,7 +76,7 @@ jobs:
 
 ## src/colabtool/data_sources_cmc.py
 
-SHA256: `3157a3115a30b68e54daa8ff7290cc3f9c6814ec4c5ed70770bce85550b4d8fd`
+SHA256: `c657933a56229bdeafb9653ff12a7a8a72896dc805709bc73653916c5ab7d6cf`
 
 ```python
 """
@@ -106,6 +106,7 @@ import json
 import logging
 import requests
 import pandas as pd
+import numpy as np
 from datetime import datetime
 from dotenv import load_dotenv
 from typing import Optional, Dict, Any, List
