@@ -123,6 +123,34 @@ def fetch_cmc_markets(pages: int = 8, limit: int = 250, cache_dir: str = "snapsh
     cache_path = f"{cache_dir}/{today}/cmc_markets.csv"
     df.to_csv(cache_path, index=False)
     _log(f"💾 Cache gespeichert unter: {cache_path}")
+  
+    # ---------------------------------------------------------------------
+    # 🧮 Ergänze Prozentänderungen (7d / 30d) analog zur CoinGecko-Struktur
+    # ---------------------------------------------------------------------
+
+    # CoinMarketCap liefert pro Coin ein Feld "quote.USD.percent_change_7d" usw.
+    # Diese Spalten müssen explizit extrahiert werden, damit compute_feature_block()
+    # Momentum-Werte korrekt berechnen oder darauf zurückfallen kann.
+
+    if "quote.USD.percent_change_7d" in df.columns:
+        df["price_change_percentage_7d_in_currency"] = df["quote.USD.percent_change_7d"]
+    else:
+        df["price_change_percentage_7d_in_currency"] = np.nan
+
+    if "quote.USD.percent_change_30d" in df.columns:
+        df["price_change_percentage_30d_in_currency"] = df["quote.USD.percent_change_30d"]
+    else:
+        df["price_change_percentage_30d_in_currency"] = np.nan
+
+    # CoinMarketCap liefert häufig auch "percent_change_24h", das du optional übernehmen kannst
+    if "quote.USD.percent_change_24h" in df.columns:
+        df["price_change_percentage_24h_in_currency"] = df["quote.USD.percent_change_24h"]
+
+    # Logging zur Kontrolle
+    logging.info(
+        f"[CMC] Momentum-Spalten ergänzt – 7d: {df['price_change_percentage_7d_in_currency'].notnull().sum()} / "
+        f"30d: {df['price_change_percentage_30d_in_currency'].notnull().sum()}"
+    )
 
     return df
 
