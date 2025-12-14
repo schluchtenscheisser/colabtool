@@ -2,7 +2,10 @@
 from __future__ import annotations
 
 import re
+import pandas as pd
+import logging
 from .utilities import pd, np, logging
+from colabtool.utils.validation import ensure_schema
 
 # Manuelle Blacklist (IDs in Kleinbuchstaben)
 EXCLUDE_IDS = set([
@@ -215,6 +218,21 @@ def compute_feature_block(df_in: pd.DataFrame) -> pd.DataFrame:
     df["vol_acc"] = vol_acc
     df["ath_drawdown_pct"] = ath_dd
 
+    # --- Schema-Validierung & Typkonvertierung ---
+    schema_map = {
+        "mom_7d_pct": float,
+        "mom_30d_pct": float,
+        "vol_acc": float,
+        "ath": float,
+        "ath_date": "datetime64[ns]",
+        "ath_drawdown_pct": float,
+        "volume_mc_ratio": float,
+        "circ_pct": float,
+        "price_source": str,
+    }
+
+    df = ensure_schema(df, schema_map)
+    
     logging.info(f"✅ compute_feature_block abgeschlossen – {len(df)} Coins verarbeitet.")
     return df
     
