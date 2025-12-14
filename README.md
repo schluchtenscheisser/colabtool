@@ -1,6 +1,13 @@
 
 <!-- ChatGPT Context Overview -->
 
+> ⚙️ **Hinweis für ChatGPT**  
+> Diese README dient als **zentrale Wissensquelle** („Single Source of Truth“)  
+> für das Repository [`schluchtenscheisser/colabtool`](https://github.com/schluchtenscheisser/colabtool).  
+> GPT-Instanzen sollen diese Datei **zuerst vollständig lesen**, bevor sie Code ändern oder Fragen beantworten.  
+> Ergänzende technische Details stehen in [`docs/GPT_SNAPSHOT.md`](docs/GPT_SNAPSHOT.md).
+
+
 # 🧠 Early Signal Altcoin Scanner ("colabtool")
 
 Ein automatisiertes Research-Tool zur **Identifikation früher Momentum-Signale bei Altcoins**  
