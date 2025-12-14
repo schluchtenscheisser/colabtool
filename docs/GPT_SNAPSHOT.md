@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: f12edce17f38412df031e20b55e55224ef3c383d_
+_Generated from commit: 4424ea3252f6f1e13694bc31ab99b27daf9dc269_
 
 ## pyproject.toml
 
@@ -734,7 +734,7 @@ def export_snapshot(df, export_path: str | None = None):
 
 ## src/colabtool/features.py
 
-SHA256: `7245f9851b4bf582cc9f2ffc52b8bc9a5bd74d809492e7457bc92081e57a4460`
+SHA256: `fa263aac943509473b0120169d9240eacc6f5bb42900ec8e035a59a0a4ff72ab`
 
 ```python
 # modules/features.py
@@ -857,15 +857,21 @@ def fetch_mexc_klines(symbol: str, interval: str = "1d", limit: int = 60) -> Opt
         if resp.status_code != 200:
             logging.warning(f"[MEXC] Klines-Fehler {symbol}: {resp.status_code}")
             return None
+
         data = resp.json()
-        df = pd.DataFrame(data, columns=["timestamp", "open", "high", "low", "close", "volume",
-                                         "_1", "_2", "_3", "_4", "_5", "_6"])
+        if not data or not isinstance(data, list):
+            logging.warning(f"[MEXC] Klines-Response leer oder ungültig für {symbol}")
+            return None
+
+        # MEXC liefert typischerweise 8 Spalten, aber wir mappen nur die relevanten
+        cols = ["timestamp", "open", "high", "low", "close", "volume", "close_time", "quote_volume"]
+        df = pd.DataFrame(data, columns=cols[:len(data[0])])  # dynamisch anpassen
         df = df[["timestamp", "open", "high", "low", "close", "volume"]].astype(float)
         return df
+
     except Exception as e:
         logging.warning(f"[MEXC] Klines-Abfrage fehlgeschlagen ({symbol}): {e}")
         return None
-
 
 def compute_mexc_features(df: pd.DataFrame) -> Dict[str, float]:
     """Berechnet Momentum, Volumenbeschleunigung, ATH-Drawdown aus MEXC-Klines"""
