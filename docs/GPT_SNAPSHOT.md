@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: bb5724cde203d918d3a4c611ac673c551079782b_
+_Generated from commit: 7df893605a5741913658f7aca5aa543c6459d5e7_
 
 ## pyproject.toml
 
@@ -930,14 +930,17 @@ def export_snapshot(df, export_path: str | None = None):
 
 ## src/colabtool/features.py
 
-SHA256: `e556edc720ead93132d6f40d1eb1ab0f293f8b7592fa91f1c80a6f9472ec0f3f`
+SHA256: `d2864644bf64c3db894f6f26de361d7f7ca054cfb6ae404284d0ef018d98b5cd`
 
 ```python
 # modules/features.py
 from __future__ import annotations
 
 import re
+import pandas as pd
+import logging
 from .utilities import pd, np, logging
+from colabtool.utils.validation import ensure_schema
 
 # Manuelle Blacklist (IDs in Kleinbuchstaben)
 EXCLUDE_IDS = set([
@@ -1150,6 +1153,21 @@ def compute_feature_block(df_in: pd.DataFrame) -> pd.DataFrame:
     df["vol_acc"] = vol_acc
     df["ath_drawdown_pct"] = ath_dd
 
+    # --- Schema-Validierung & Typkonvertierung ---
+    schema_map = {
+        "mom_7d_pct": float,
+        "mom_30d_pct": float,
+        "vol_acc": float,
+        "ath": float,
+        "ath_date": "datetime64[ns]",
+        "ath_drawdown_pct": float,
+        "volume_mc_ratio": float,
+        "circ_pct": float,
+        "price_source": str,
+    }
+
+    df = ensure_schema(df, schema_map)
+    
     logging.info(f"✅ compute_feature_block abgeschlossen – {len(df)} Coins verarbeitet.")
     return df
     
