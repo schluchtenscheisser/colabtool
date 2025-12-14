@@ -115,14 +115,26 @@ def fetch_cmc_markets(pages: int = 8, limit: int = 250, cache_dir: str = "snapsh
             })
 
         time.sleep(1.5)  # Throttling
-
+      
     df = pd.DataFrame(all_rows)
+
+    # --- Neue Kennzahlen (CMC-basiert) ---
+    df["volume_mc_ratio"] = df["total_volume"] / df["market_cap"]
+    df["circ_pct"] = df["circulating_supply"] / df["max_supply"]
+
+    # Slug sicherstellen (CMC benötigt ihn für Mapping)
+    if "slug" not in df.columns:
+        df["slug"] = [None] * len(df)
+
+    # BTC/ETH explizit beibehalten (nur später auswerten)
+    # -> kein Filter hier!
 
     # Cache schreiben
     today = datetime.now().strftime("%Y%m%d")
     os.makedirs(f"{cache_dir}/{today}", exist_ok=True)
     cache_path = f"{cache_dir}/{today}/cmc_markets.csv"
     df.to_csv(cache_path, index=False)
+
     _log(f"💾 Cache gespeichert unter: {cache_path}")
   
     # ---------------------------------------------------------------------
