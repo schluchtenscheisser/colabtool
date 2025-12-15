@@ -121,11 +121,12 @@ def run_snapshot(mode: str = "standard", offline: bool = False) -> Path:
         logging.info(f"✅ fetch_cmc_markets: {len(df)} Coins geladen.")
 
     # --- MEXC Mapping hinzufügen ---
-    try:
-        df = map_mexc_pairs(df)
-        logging.info(f"[MEXC] ✅ Mapping abgeschlossen ({df['mexc_pair'].notna().sum()} Treffer).")
-    except Exception as e:
-        logging.warning(f"[MEXC] ⚠️ Fehler beim Mapping: {e}")
+    #  try:
+    #    df = map_mexc_pairs(df)
+    #    logging.info(f"[MEXC] ✅ Mapping abgeschlossen ({df['mexc_pair'].notna().sum()} Treffer).")
+    #    
+    # except Exception as e:
+    #    logging.warning(f"[MEXC] ⚠️ Fehler beim Mapping: {e}")
     
     # ------------------------------
     # 2️⃣ Schema-Validierung
