@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 772b2d0c9effb70dcf0c0a1651f2a13c00489391_
+_Generated from commit: a76ce1b6726c6ea88259f0c93ba30d3cba8520f2_
 
 ## pyproject.toml
 
@@ -506,7 +506,7 @@ if __name__ == "__main__":
 
 ## src/colabtool/run_snapshot_mode.py
 
-SHA256: `8124c85050dc8c489fffc8342d7b540f10a9b607038707f39d499d832f0349cb`
+SHA256: `b80e33a0d4af39702893dd0667eac46b9aabcbb5d0b22c83eaa2e101f87de086`
 
 ```python
 """
@@ -542,6 +542,7 @@ os.environ.update({
 
 # Core-Imports
 from colabtool.data_sources_cmc import fetch_cmc_markets, map_mexc_pairs, map_tvl
+from colabtool.data_sources_cmc import map_mexc_pairs
 from colabtool.data_sources import get_alias_seed  # bleibt erhalten
 from colabtool.pre_universe import apply_pre_universe_filters
 from colabtool.features import compute_feature_block
@@ -630,6 +631,13 @@ def run_snapshot(mode: str = "standard", offline: bool = False) -> Path:
         df = fetch_cmc_markets(pages=8, limit=250)
         logging.info(f"✅ fetch_cmc_markets: {len(df)} Coins geladen.")
 
+    # --- MEXC Mapping hinzufügen ---
+    try:
+        df = map_mexc_pairs(df)
+        logging.info(f"[MEXC] ✅ Mapping abgeschlossen ({df['mexc_pair'].notna().sum()} Treffer).")
+    except Exception as e:
+        logging.warning(f"[MEXC] ⚠️ Fehler beim Mapping: {e}")
+    
     # ------------------------------
     # 2️⃣ Schema-Validierung
     # ------------------------------
