@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: cab1a95946fb6866cdfd1fc17fdda44b47325f5f_
+_Generated from commit: 482005bf742f059cb37e744d7a1f282f6fe180d7_
 
 ## pyproject.toml
 
@@ -231,7 +231,7 @@ jobs:
 
 ## src/colabtool/data_sources_cmc.py
 
-SHA256: `09ca4830ec601fa7ef8c79240e0d94e6787dfe2745ff4b4897b3db9555ebd22d`
+SHA256: `c479d633baa8526997eed135375046cff543b7010ed104c2371e313f94f95037`
 
 ```python
 """
@@ -354,17 +354,24 @@ def fetch_cmc_markets(pages: int = 8, limit: int = 250, cache_dir: str = "snapsh
       
     df = pd.DataFrame(all_rows)
 
-    # --- Neue Kennzahlen (robust berechnet) ---
-    df["volume_mc_ratio"] = (
-        df.get("quote.USD.volume_24h", np.nan) / df.get("quote.USD.market_cap", np.nan)
-    )
-
-    # Sichere Berechnung der Umlaufquote (circ_pct)
+    # --- Volume/MarketCap-Ratio (robust berechnet) ---
+    if "quote.USD.volume_24h" in df.columns and "quote.USD.market_cap" in df.columns:
+        df["volume_mc_ratio"] = np.where(
+            (df["quote.USD.market_cap"] > 0) & (df["quote.USD.volume_24h"] > 0),
+            df["quote.USD.volume_24h"] / df["quote.USD.market_cap"],
+            np.nan
+        )
+    else:
+        logging.warning("[CMC] ⚠️ volume_24h oder market_cap fehlt – volume_mc_ratio = NaN")
+        df["volume_mc_ratio"] = np.nan
+    
+    # --- Sichere Berechnung der Umlaufquote (circ_pct) ---
     if "circulating_supply" in df.columns and "max_supply" in df.columns:
         df["circ_pct"] = df["circulating_supply"] / df["max_supply"]
     else:
         logging.warning("[CMC] ⚠️ circulating_supply oder max_supply fehlt – circ_pct = NaN")
         df["circ_pct"] = np.nan
+
 
     # Slug sicherstellen (CMC benötigt ihn für Mapping)
     if "slug" not in df.columns:
