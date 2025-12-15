@@ -1,6 +1,11 @@
 import pandas as pd
 from colabtool.data_sources_cmc import fetch_cmc_markets
 from colabtool.data_sources_mexc import fetch_mexc_pairs
+import sys
+import os
+
+# Ermöglicht das Importieren aus src/
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
 
 # 1️⃣ Daten abziehen
 df_cmc = fetch_cmc_markets(pages=2, limit=250)  # begrenzt für Debug
