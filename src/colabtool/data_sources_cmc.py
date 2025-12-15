@@ -118,9 +118,17 @@ def fetch_cmc_markets(pages: int = 8, limit: int = 250, cache_dir: str = "snapsh
       
     df = pd.DataFrame(all_rows)
 
-    # --- Neue Kennzahlen (CMC-basiert) ---
-    df["volume_mc_ratio"] = df["total_volume"] / df["market_cap"]
-    df["circ_pct"] = df["circulating_supply"] / df["max_supply"]
+    # --- Neue Kennzahlen (robust berechnet) ---
+    df["volume_mc_ratio"] = (
+        df.get("quote.USD.volume_24h", np.nan) / df.get("quote.USD.market_cap", np.nan)
+    )
+
+    # Sichere Berechnung der Umlaufquote (circ_pct)
+    if "circulating_supply" in df.columns and "max_supply" in df.columns:
+        df["circ_pct"] = df["circulating_supply"] / df["max_supply"]
+    else:
+        logging.warning("[CMC] ⚠️ circulating_supply oder max_supply fehlt – circ_pct = NaN")
+        df["circ_pct"] = np.nan
 
     # Slug sicherstellen (CMC benötigt ihn für Mapping)
     if "slug" not in df.columns:
