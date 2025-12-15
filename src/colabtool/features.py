@@ -189,29 +189,56 @@ def compute_feature_block(df_in: pd.DataFrame) -> pd.DataFrame:
     mom7, mom30, vol_acc, ath_dd = [], [], [], []
 
     for _, row in df.iterrows():
-        symbol = row["symbol"].upper() + "USDT"
-    kl = fetch_mexc_klines(symbol)
-    if kl is not None and len(kl) >= 5:
-        f = compute_mexc_features(kl)
-        mom7.append(f["mom_7d_pct"])
-        mom30.append(f["mom_30d_pct"])
-        vol_acc.append(f["vol_acc"])
-        ath_dd.append(f["ath_drawdown_pct"])
-        # Neue Felder
-        ath_vals.append(f["ath"])
-        ath_dates.append(f["ath_date"])
-        price_sources.append("MEXC")
-        logging.debug(f"[MEXC] ✅ Klines verarbeitet: {symbol}")
-    else:
-        # Fallback auf CMC-Prozentwerte
-        mom7.append(row.get("price_change_percentage_7d_in_currency", np.nan))
-        mom30.append(row.get("price_change_percentage_30d_in_currency", np.nan))
-        vol_acc.append(np.nan)
-        ath_dd.append(np.nan)
-        ath_vals.append(np.nan)
-        ath_dates.append(np.nan)
-        price_sources.append("CMC")
-        logging.info(f"[MEXC] ⚙️ Fallback auf CMC-Daten: {symbol}")
+        # --- Symbol ermitteln & validieren ---
+        symbol = str(row.get("symbol", "")).strip().upper()
+        if not symbol:
+            logging.warning("[MEXC] ⚠️ Kein Symbol in Zeile gefunden – übersprungen.")
+            mom7.append(np.nan)
+            mom30.append(np.nan)
+            vol_acc.append(np.nan)
+            ath_dd.append(np.nan)
+            ath_vals.append(np.nan)
+            ath_dates.append(np.nan)
+            price_sources.append("CMC")
+            continue
+    
+        # MEXC-Pairs enden üblicherweise auf USDT
+        pair = f"{symbol}USDT"
+    
+        # --- Versuche Klines abzurufen ---
+        kl = fetch_mexc_klines(pair)
+        if kl is not None and len(kl) >= 5:
+            try:
+                f = compute_mexc_features(kl)
+                mom7.append(f.get("mom_7d_pct", np.nan))
+                mom30.append(f.get("mom_30d_pct", np.nan))
+                vol_acc.append(f.get("vol_acc", np.nan))
+                ath_dd.append(f.get("ath_drawdown_pct", np.nan))
+                # Neue Felder
+                ath_vals.append(f.get("ath", np.nan))
+                ath_dates.append(f.get("ath_date", np.nan))
+                price_sources.append("MEXC")
+                logging.debug(f"[MEXC] ✅ Klines verarbeitet: {pair}")
+            except Exception as e:
+                logging.warning(f"[MEXC] ⚠️ Fehler bei Feature-Berechnung {pair}: {e}")
+                mom7.append(np.nan)
+                mom30.append(np.nan)
+                vol_acc.append(np.nan)
+                ath_dd.append(np.nan)
+                ath_vals.append(np.nan)
+                ath_dates.append(np.nan)
+                price_sources.append("CMC")
+        else:
+            # --- Fallback auf CMC-Prozentwerte ---
+            mom7.append(row.get("price_change_percentage_7d_in_currency", np.nan))
+            mom30.append(row.get("price_change_percentage_30d_in_currency", np.nan))
+            vol_acc.append(np.nan)
+            ath_dd.append(np.nan)
+            ath_vals.append(np.nan)
+            ath_dates.append(np.nan)
+            price_sources.append("CMC")
+            logging.info(f"[MEXC] ⚙️ Fallback auf CMC-Daten: {pair}")
+
 
     df["mom_7d_pct"] = mom7
     df["mom_30d_pct"] = mom30
