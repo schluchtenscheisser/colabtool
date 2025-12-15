@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: a76ce1b6726c6ea88259f0c93ba30d3cba8520f2_
+_Generated from commit: caa170729a1858ef7c803b28753529b9a80e0bc4_
 
 ## pyproject.toml
 
@@ -506,7 +506,7 @@ if __name__ == "__main__":
 
 ## src/colabtool/run_snapshot_mode.py
 
-SHA256: `b80e33a0d4af39702893dd0667eac46b9aabcbb5d0b22c83eaa2e101f87de086`
+SHA256: `cf2790d7b949387b94c0306ee2a1134e51af152ef54428b98c763ed60c37153a`
 
 ```python
 """
@@ -632,11 +632,12 @@ def run_snapshot(mode: str = "standard", offline: bool = False) -> Path:
         logging.info(f"✅ fetch_cmc_markets: {len(df)} Coins geladen.")
 
     # --- MEXC Mapping hinzufügen ---
-    try:
-        df = map_mexc_pairs(df)
-        logging.info(f"[MEXC] ✅ Mapping abgeschlossen ({df['mexc_pair'].notna().sum()} Treffer).")
-    except Exception as e:
-        logging.warning(f"[MEXC] ⚠️ Fehler beim Mapping: {e}")
+    #  try:
+    #    df = map_mexc_pairs(df)
+    #    logging.info(f"[MEXC] ✅ Mapping abgeschlossen ({df['mexc_pair'].notna().sum()} Treffer).")
+    #    
+    # except Exception as e:
+    #    logging.warning(f"[MEXC] ⚠️ Fehler beim Mapping: {e}")
     
     # ------------------------------
     # 2️⃣ Schema-Validierung
