@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 1de688d59be16e3a71383dcc093d6ce70177c546_
+_Generated from commit: b94de9fc012aa29681c582e38de24c324c30a1c5_
 
 ## pyproject.toml
 
@@ -597,7 +597,7 @@ if __name__ == "__main__":
 
 ## src/colabtool/run_snapshot_mode.py
 
-SHA256: `cfd550fbb7dfb08ff77b5ceb1dc07c6fcb576b92a3b322534cadfbc2b7354486`
+SHA256: `15b31c72ed793288c6243da82c2f7dbbaccee23ca4b5f4545b763f6d278b6881`
 
 ```python
 """
@@ -718,19 +718,18 @@ def run_snapshot(mode: str = "standard", offline: bool = False) -> Path:
             },
         ])
     else:
-        df = fetch_cmc_markets(pages=8, limit=250)
-        logging.info(f"✅ fetch_cmc_markets: {len(df)} Coins geladen.")
+    df = fetch_cmc_markets(pages=8, limit=250)
+    logging.info(f"✅ fetch_cmc_markets: {len(df)} Coins geladen.")
 
-        # --- MEXC Mapping direkt nach CMC ---
-        try:
-            df = map_mexc_pairs(df)
-            logging.info(f"[MEXC] ✅ Mapping abgeschlossen ({df['mexc_pair'].notna().sum()} Treffer).")
-        except Exception as e:
-            logging.warning(f"[MEXC] ⚠️ Fehler beim Mapping: {e}")
-
-        # --- Logging vor Filterung ---
-        logging.info(f"[MEXC] 🔍 Vor Filterung: {df['mexc_pair'].notna().sum()} Coins mit MEXC-Paar")
-
+    # --- MEXC Mapping immer ausführen ---
+    try:
+        df = map_mexc_pairs(df)
+        logging.info(f"[MEXC] ✅ Mapping abgeschlossen ({df['mexc_pair'].notna().sum()} Treffer).")
+    except Exception as e:
+        logging.warning(f"[MEXC] ⚠️ Fehler beim Mapping: {e}")
+    
+    # --- Logging vor Filterung ---
+    logging.info(f"[MEXC] 🔍 Vor Filterung: {df['mexc_pair'].notna().sum()} Coins mit MEXC-Paar")
     
     # ------------------------------
     # 2️⃣ Schema-Validierung
