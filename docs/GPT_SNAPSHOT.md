@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 2b88fc8de568fd8de3686663310e36c0dbe8e5b5_
+_Generated from commit: 0d64706256b1e30ee1dda80127a6bdf195e0fa55_
 
 ## pyproject.toml
 
@@ -52,7 +52,7 @@ python-dotenv>=1.0.0
 
 ## README.md
 
-SHA256: `f8cc8393ddfefd6a33d7291a677fff22cd989d331f17b78cb1dfbd0f854b432a`
+SHA256: `f66b07da8398fb1ec9fca962ae2482c085508639f80fe0fa6c24b7995257aa58`
 
 ```markdown
 
@@ -96,7 +96,9 @@ Siehe [📄 docs/GPT_SNAPSHOT.md](docs/GPT_SNAPSHOT.md)
 > Diese Datei wird **automatisch nach jedem Commit** aktualisiert  
 > und enthält die aktuelle Modul- und Funktionsübersicht („ChatGPT Context Map“).
 
+## 🧭 Systemarchitektur auf einen Blick
 
+```plaintext
  ┌────────────────────────────┐
  │    CoinMarketCap API       │
  │ → Listings, Volumen, Preise│
@@ -150,6 +152,7 @@ Siehe [📄 docs/GPT_SNAPSHOT.md](docs/GPT_SNAPSHOT.md)
  │ GPT Snapshot Workflow      │
  │ docs/GPT_SNAPSHOT.md       │
  └────────────────────────────┘
+```
 
 ---
 
