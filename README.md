@@ -18,7 +18,7 @@ Fokus: Mid-Caps, Volumenbeschleunigung, Breakout-Nähe und Buzz-Aktivität.
 
 ## 1️⃣ Ziel und Zweck
 
-Das Tool analysiert Altcoin-Marktdaten (CoinGecko, MEXC, DeFiLlama, CryptoPanic)  
+Das Tool analysiert Altcoin-Marktdaten (CoinMarketCap, MEXC, DeFiLlama, CryptoPanic)  
 und erkennt potenzielle „Hidden Gems“ oder Comebacks anhand von  
 Momentum, Volumenbeschleunigung, Breakout-Distanz und Buzz-Dynamik.
 
@@ -27,9 +27,9 @@ Momentum, Volumenbeschleunigung, Breakout-Distanz und Buzz-Dynamik.
 ## 2️⃣ Architekturüberblick
 
 ```text
-CoinGecko Markets → Filter & Exclusions → MEXC Mapping
+CoinMarketCap Markets → Filter & Exclusions → MEXC Mapping
       ↓
-Feature Engine (Momentum, VolAcc, Breakout, Buzz)
+Feature Engine (MEXC-Klines & CMC-Fallback: Momentum, VolAcc, ATH-Drawdown, Buzz)
       ↓
 Scoring & Segmentierung → Backtest → Snapshot Export
 ```
@@ -57,9 +57,10 @@ Siehe [📄 docs/GPT_SNAPSHOT.md](docs/GPT_SNAPSHOT.md)
 |-----------|-----------|
 | `REQUIRE_MEXC` | Nur Coins mit MEXC-Listing |
 | `LIGHT_BREAKOUT_ALL` | Breakout-Scan für alle oder nur Kandidaten |
-| `SKIP_CATEGORIES` | Überspringt CoinGecko-Kategorisierung |
+| `SKIP_CATEGORIES` | Überspringt CoinMarketCap-Kategorisierung |
 | `CRYPTOPANIC_API_KEY` | Optional für Buzz-Daten |
-| `CG_MIN_INTERVAL_S` | Rate-Limit für CoinGecko-API |
+| `CG_MIN_INTERVAL_S` | Rate-Limit für CoinMarketCap-API |
+| `CMC_API_KEY` | CoinMarketCap API-Key (Pflicht) |
 
 ---
 
@@ -137,10 +138,10 @@ Es stellt **keine Finanzberatung** dar. Nutzung auf eigenes Risiko.
 ## 🔁 Quick-Reference (für ChatGPT)
 
 **Primäre Einstiegspunkte:**
-- `main.py` → Pipeline-Controller  
-- `src/pipeline/features.py` → Feature-Berechnung  
-- `src/pipeline/scoring.py` → Scoring / Segmentierung  
-- `src/export/excel_writer.py` → Excel-Export  
+- `src/colabtool/data_sources_cmc.py` → CMC-Datenquelle (ersetzt CoinGecko)
+- `src/colabtool/exchanges.py` → MEXC-Pairing und Filterlogik
+- `src/colabtool/run_snapshot_mode.py` → vollständiger Pipeline-Run & CLI
+- `src/colabtool/export.py` → Export mit Rankings & Legacy-Kompatibilität
 
 **Wenn eine Funktion unklar ist:**  
 → Zuerst in `src/pipeline/` suchen  
