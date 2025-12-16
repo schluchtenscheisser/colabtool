@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 0d64706256b1e30ee1dda80127a6bdf195e0fa55_
+_Generated from commit: 795489c1010bfb84aefac1155b64a9cb6a7b1a4f_
 
 ## pyproject.toml
 
@@ -290,7 +290,7 @@ jobs:
 
 ## src/colabtool/data_sources_cmc.py
 
-SHA256: `c479d633baa8526997eed135375046cff543b7010ed104c2371e313f94f95037`
+SHA256: `0439f9d53b6c34732621d7c2a2009716b0f2aa0c478be8e6794f42809f03d4db`
 
 ```python
 """
@@ -482,26 +482,58 @@ def fetch_cmc_markets(pages: int = 8, limit: int = 250, cache_dir: str = "snapsh
 # 🔁 MEXC Mapping
 # ---------------------------------------------------------------------
 
-def _fetch_mexc_pairs() -> List[Dict[str, Any]]:
-    """Lädt MEXC Spot-Paare"""
-    try:
-        resp = requests.get(MEXC_BASE_URL, timeout=10)
-        if resp.status_code == 200:
-            data = resp.json()
-            return data.get("symbols", [])
-        _log(f"⚠️  Fehler beim Laden der MEXC-Paare: {resp.status_code}")
-    except Exception as e:
-        _log(f"⚠️  MEXC-Verbindungsfehler: {e}")
+def _fetch_mexc_pairs(retries: int = 3, delay: float = 2.0) -> list:
+    """
+    Lädt alle Spot-Paare von der MEXC-API (USDT-Basispaare).
+    Inklusive Retry-Logik bei temporären Fehlern.
+    """
+    url = "https://api.mexc.com/api/v3/exchangeInfo"
+    headers = {"User-Agent": "colabtool/1.0"}
+
+    for attempt in range(retries):
+        try:
+            resp = requests.get(url, headers=headers, timeout=15)
+            if resp.status_code == 200:
+                data = resp.json()
+                pairs = data.get("symbols", [])
+                if not pairs:
+                    logging.warning("[MEXC] ⚠️ Keine Handelspaare in API-Antwort gefunden.")
+                return pairs
+            else:
+                logging.warning(f"[MEXC] ⚠️ Unerwarteter Statuscode {resp.status_code}, Versuch {attempt+1}/{retries}")
+        except Exception as e:
+            logging.warning(f"[MEXC] ⚠️ Verbindungsfehler (Versuch {attempt+1}/{retries}): {e}")
+        time.sleep(delay)
+
+    logging.error("[MEXC] ❌ API-Abruf nach mehreren Versuchen fehlgeschlagen.")
     return []
 
 
 def map_mexc_pairs(df: pd.DataFrame) -> pd.DataFrame:
-    """Markiert, ob Coin bei MEXC handelbar ist"""
-    _log("🔍 Lade MEXC-Handelspaare ...")
+    """
+    Verknüpft CMC-Marktdaten mit MEXC-Handelspaaren (USDT).
+    Fügt Spalte 'mexc_pair' hinzu.
+    """
+    logging.info("[MEXC] 🔍 Lade MEXC-Handelspaare ...")
     pairs = _fetch_mexc_pairs()
-    mexc_symbols = {p["baseAsset"].upper() for p in pairs}
-    df["mexc_pair"] = df["symbol"].apply(lambda s: s.upper() in mexc_symbols)
-    _log(f"✅ MEXC Mapping abgeschlossen ({df['mexc_pair'].sum()} Treffer).")
+
+    if not pairs:
+        logging.warning("[MEXC] ⚠️ Keine MEXC-Paare erhalten – Mapping übersprungen.")
+        df["mexc_pair"] = None
+        return df
+
+    # Vergleichsmenge vorbereiten
+    mexc_symbols = {p["baseAsset"].upper() for p in pairs if p.get("quoteAsset") == "USDT"}
+    logging.info(f"[MEXC] 🔍 Vergleichsmenge: {len(mexc_symbols)} Symbole geladen.")
+
+    # Symbol-Vergleich robust (Großschreibung)
+    df["symbol_upper"] = df["symbol"].astype(str).str.upper()
+    df["mexc_pair"] = df["symbol_upper"].apply(
+        lambda s: f"{s}USDT" if s in mexc_symbols else None
+    )
+
+    hits = df["mexc_pair"].notna().sum()
+    logging.info(f"[MEXC] ✅ Mapping abgeschlossen ({hits} Treffer).")
     return df
 
 
