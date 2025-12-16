@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: d2b31f7b3cb2d01efca6a0f02ef6d79ba716f08e_
+_Generated from commit: 81b100209fdfac3c733c467983766c992fc8e13b_
 
 ## pyproject.toml
 
@@ -1055,7 +1055,7 @@ def export_snapshot(df, export_path: str | None = None):
 
 ## src/colabtool/features.py
 
-SHA256: `44bcab8b9eaa31dab53f0e2913ae1c90a913ddbaed350d8878e0ecc7fc49acaa`
+SHA256: `bea4dbe4619c82bb1e4c229dc1c7aec56f0404bdfb6ed54e4791a6df65d32256`
 
 ```python
 # modules/features.py
@@ -1198,8 +1198,9 @@ def fetch_mexc_klines(symbol: str, interval: str = "1d", limit: int = 60) -> Opt
             logging.warning(f"[MEXC] Klines-Response leer oder ungültig für {symbol}")
             return None
 
-        # --- Spalten-Mapping vereinheitlicht ---
-        df = pd.DataFrame(data, columns=["time", "open", "high", "low", "close", "volume"])
+        # --- Nur relevante Spalten extrahieren (erste 6 Werte) ---
+        cleaned_data = [row[:6] for row in data if len(row) >= 6]
+        df = pd.DataFrame(cleaned_data, columns=["time", "open", "high", "low", "close", "volume"])
         df["time"] = pd.to_datetime(df["time"], unit="ms")
 
         return df
