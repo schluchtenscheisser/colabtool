@@ -138,8 +138,9 @@ def fetch_mexc_klines(symbol: str, interval: str = "1d", limit: int = 60) -> Opt
             logging.warning(f"[MEXC] Klines-Response leer oder ungültig für {symbol}")
             return None
 
-        # --- Spalten-Mapping vereinheitlicht ---
-        df = pd.DataFrame(data, columns=["time", "open", "high", "low", "close", "volume"])
+        # --- Nur relevante Spalten extrahieren (erste 6 Werte) ---
+        cleaned_data = [row[:6] for row in data if len(row) >= 6]
+        df = pd.DataFrame(cleaned_data, columns=["time", "open", "high", "low", "close", "volume"])
         df["time"] = pd.to_datetime(df["time"], unit="ms")
 
         return df
