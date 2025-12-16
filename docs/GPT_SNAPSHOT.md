@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: c9888af90a812fbadc5820fbc49bd1b4fdaa7874_
+_Generated from commit: ba958c4bb40acad554d6bb8620e08eef6e6f4c78_
 
 ## pyproject.toml
 
@@ -597,7 +597,7 @@ if __name__ == "__main__":
 
 ## src/colabtool/run_snapshot_mode.py
 
-SHA256: `4f916f05fd6af6b555d55e9f412d9ea8ef7008b5f87002aa86b3da98bfa65a53`
+SHA256: `c83bddbe7335af2f484f6ad0fa219f5400826116a499574d1cce657716118258`
 
 ```python
 """
@@ -652,6 +652,14 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
 )
+
+# --- Debug: Feature-Check ---
+logging.info(f"[DEBUG] Nach compute_feature_block: {len(df)} Zeilen, Columns: {list(df.columns)}")
+if "mom_30d_pct" in df.columns:
+    valid_mom = df['mom_30d_pct'].notna().sum()
+    logging.info(f"[DEBUG] mom_30d_pct valide Werte: {valid_mom}")
+else:
+    logging.warning("[DEBUG] mom_30d_pct fehlt komplett – compute_feature_block evtl. übersprungen.")
 
 
 # --------------------------------------------------
