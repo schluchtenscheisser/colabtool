@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 81b100209fdfac3c733c467983766c992fc8e13b_
+_Generated from commit: 52a32a8ffb26695391248a1c06f7c6d6bf364e11_
 
 ## pyproject.toml
 
@@ -1055,7 +1055,7 @@ def export_snapshot(df, export_path: str | None = None):
 
 ## src/colabtool/features.py
 
-SHA256: `bea4dbe4619c82bb1e4c229dc1c7aec56f0404bdfb6ed54e4791a6df65d32256`
+SHA256: `05edca5448209edd7132d8b882069bb30e605021f2a36b72aa61629979cbc35a`
 
 ```python
 # modules/features.py
@@ -1173,22 +1173,21 @@ MEXC_KLINES_URL = "https://api.mexc.com/api/v3/klines"
 
 def fetch_mexc_klines(symbol: str, interval: str = "1d", limit: int = 60) -> Optional[pd.DataFrame]:
     """
-    Holt historische Candle-Daten von MEXC.
-    Gibt DataFrame mit Spalten [time, open, high, low, close, volume] zurück.
-    Gibt None zurück, wenn kein Pair existiert (HTTP 400).
+    Holt historische Candle-Daten (Klines) von der MEXC Spot API.
+    Rückgabeformat: DataFrame mit Spalten [time, open, high, low, close, volume].
+    Gibt None zurück, wenn keine Daten oder ein HTTP-Fehler auftritt.
     """
     try:
         resp = requests.get(
-            MEXC_KLINES_URL,
+            "https://api.mexc.com/api/v3/klines",
             params={"symbol": symbol.upper(), "interval": interval, "limit": limit},
             timeout=10
         )
 
-        # --- Kein Handelspaar vorhanden ---
+        # --- Kein Handelspaar vorhanden oder API-Fehler ---
         if resp.status_code == 400:
             logging.info(f"[MEXC] Kein Klines-Listing für {symbol} – Fallback auf CMC aktiv.")
             return None
-
         if resp.status_code != 200:
             logging.warning(f"[MEXC] Klines-Fehler {symbol}: {resp.status_code}")
             return None
@@ -1198,10 +1197,19 @@ def fetch_mexc_klines(symbol: str, interval: str = "1d", limit: int = 60) -> Opt
             logging.warning(f"[MEXC] Klines-Response leer oder ungültig für {symbol}")
             return None
 
-        # --- Nur relevante Spalten extrahieren (erste 6 Werte) ---
+        # --- Laut API: [open_time, open, high, low, close, volume, close_time, quote_volume]
+        # Wir extrahieren nur die relevanten OHLCV-Spalten.
         cleaned_data = [row[:6] for row in data if len(row) >= 6]
+
         df = pd.DataFrame(cleaned_data, columns=["time", "open", "high", "low", "close", "volume"])
         df["time"] = pd.to_datetime(df["time"], unit="ms")
+
+        # --- Typkonvertierung sicherstellen ---
+        for col in ["open", "high", "low", "close", "volume"]:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+
+        # --- Debug-Logging ---
+        logging.debug(f"[MEXC] {symbol}: {len(df)} Candles geladen, Spalten: {list(df.columns)}")
 
         return df
 
