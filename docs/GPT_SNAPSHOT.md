@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: a18b01692dfd7982a2670d68391b540d79e1c392_
+_Generated from commit: c9888af90a812fbadc5820fbc49bd1b4fdaa7874_
 
 ## pyproject.toml
 
@@ -597,7 +597,7 @@ if __name__ == "__main__":
 
 ## src/colabtool/run_snapshot_mode.py
 
-SHA256: `6c7ce882b06ff23c1c63cc8661388f11edf2c5d529dd612ec5ff18c806a95859`
+SHA256: `4f916f05fd6af6b555d55e9f412d9ea8ef7008b5f87002aa86b3da98bfa65a53`
 
 ```python
 """
@@ -721,16 +721,20 @@ def run_snapshot(mode: str = "standard", offline: bool = False) -> Path:
         df = fetch_cmc_markets(pages=8, limit=250)
         logging.info(f"✅ fetch_cmc_markets: {len(df)} Coins geladen.")
 
-    # --- MEXC Mapping immer ausführen ---
+    # ------------------------------
+    # 1b️⃣ MEXC Mapping (global, unabhängig vom Modus)
+    # ------------------------------
     try:
         df = map_mexc_pairs(df)
-        logging.info(f"[MEXC] ✅ Mapping abgeschlossen ({df['mexc_pair'].notna().sum()} Treffer).")
+        hits = df["mexc_pair"].notna().sum()
+        logging.info(f"[MEXC] ✅ Mapping abgeschlossen ({hits} Treffer von {len(df)}).")
+        if hits == 0:
+            logging.warning("[MEXC] ⚠️ Keine Treffer beim Mapping – prüfe API oder Symbolabgleich.")
     except Exception as e:
         logging.warning(f"[MEXC] ⚠️ Fehler beim Mapping: {e}")
-    
-    # --- Logging vor Filterung ---
+
     logging.info(f"[MEXC] 🔍 Vor Filterung: {df['mexc_pair'].notna().sum()} Coins mit MEXC-Paar")
-    
+
     # ------------------------------
     # 2️⃣ Schema-Validierung
     # ------------------------------
