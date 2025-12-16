@@ -39,7 +39,9 @@ Siehe [📄 docs/GPT_SNAPSHOT.md](docs/GPT_SNAPSHOT.md)
 > Diese Datei wird **automatisch nach jedem Commit** aktualisiert  
 > und enthält die aktuelle Modul- und Funktionsübersicht („ChatGPT Context Map“).
 
+## 🧭 Systemarchitektur auf einen Blick
 
+```plaintext
  ┌────────────────────────────┐
  │    CoinMarketCap API       │
  │ → Listings, Volumen, Preise│
@@ -93,6 +95,7 @@ Siehe [📄 docs/GPT_SNAPSHOT.md](docs/GPT_SNAPSHOT.md)
  │ GPT Snapshot Workflow      │
  │ docs/GPT_SNAPSHOT.md       │
  └────────────────────────────┘
+```
 
 ---
 
