@@ -31,7 +31,6 @@ os.environ.update({
 
 # Core-Imports
 from colabtool.data_sources_cmc import fetch_cmc_markets, map_mexc_pairs, map_tvl
-from colabtool.data_sources_cmc import map_mexc_pairs
 from colabtool.data_sources import get_alias_seed  # bleibt erhalten
 from colabtool.pre_universe import apply_pre_universe_filters
 from colabtool.features import compute_feature_block
