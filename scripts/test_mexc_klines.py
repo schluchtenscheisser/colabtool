@@ -17,7 +17,7 @@ else:
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 # --- Imports aus deiner Pipeline ---
-from colabtool.data_sources_cmc import fetch_mexc_klines
+from colabtool.features import fetch_mexc_klines
 from colabtool.features import compute_mexc_features
 
 
