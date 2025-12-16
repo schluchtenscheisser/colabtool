@@ -119,16 +119,20 @@ def run_snapshot(mode: str = "standard", offline: bool = False) -> Path:
         df = fetch_cmc_markets(pages=8, limit=250)
         logging.info(f"✅ fetch_cmc_markets: {len(df)} Coins geladen.")
 
-    # --- MEXC Mapping immer ausführen ---
+    # ------------------------------
+    # 1b️⃣ MEXC Mapping (global, unabhängig vom Modus)
+    # ------------------------------
     try:
         df = map_mexc_pairs(df)
-        logging.info(f"[MEXC] ✅ Mapping abgeschlossen ({df['mexc_pair'].notna().sum()} Treffer).")
+        hits = df["mexc_pair"].notna().sum()
+        logging.info(f"[MEXC] ✅ Mapping abgeschlossen ({hits} Treffer von {len(df)}).")
+        if hits == 0:
+            logging.warning("[MEXC] ⚠️ Keine Treffer beim Mapping – prüfe API oder Symbolabgleich.")
     except Exception as e:
         logging.warning(f"[MEXC] ⚠️ Fehler beim Mapping: {e}")
-    
-    # --- Logging vor Filterung ---
+
     logging.info(f"[MEXC] 🔍 Vor Filterung: {df['mexc_pair'].notna().sum()} Coins mit MEXC-Paar")
-    
+
     # ------------------------------
     # 2️⃣ Schema-Validierung
     # ------------------------------
