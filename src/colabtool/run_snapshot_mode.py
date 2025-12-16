@@ -51,15 +51,6 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
 )
 
-# --- Debug: Feature-Check ---
-logging.info(f"[DEBUG] Nach compute_feature_block: {len(df)} Zeilen, Columns: {list(df.columns)}")
-if "mom_30d_pct" in df.columns:
-    valid_mom = df['mom_30d_pct'].notna().sum()
-    logging.info(f"[DEBUG] mom_30d_pct valide Werte: {valid_mom}")
-else:
-    logging.warning("[DEBUG] mom_30d_pct fehlt komplett – compute_feature_block evtl. übersprungen.")
-
-
 # --------------------------------------------------
 # Hilfsfunktion: Score-Validierung
 # --------------------------------------------------
@@ -185,6 +176,15 @@ def run_snapshot(mode: str = "standard", offline: bool = False) -> Path:
     # 5️⃣ Validierung & Backtest
     # ------------------------------
     if effective_mode != "offline":
+        # --- Debug: Feature-Check ---
+        logging.info(f"[DEBUG] Nach compute_feature_block: {len(df)} Zeilen, Columns: {list(df.columns)}")
+        if "mom_30d_pct" in df.columns:
+            valid_mom = df["mom_30d_pct"].notna().sum()
+            logging.info(f"[DEBUG] mom_30d_pct valide Werte: {valid_mom}")
+        else:
+            logging.warning("[DEBUG] mom_30d_pct fehlt komplett – compute_feature_block evtl. übersprungen.")
+
+        # --- Scores validieren ---
         validate_scores(df)
         backtest_results = backtest_on_snapshot(df, top_k=20, horizons=[20, 40, 60])
         logging.info(f"✅ Backtest abgeschlossen ({len(backtest_results)} Zeilen)")
