@@ -114,7 +114,7 @@ MEXC_KLINES_URL = "https://api.mexc.com/api/v3/klines"
 def fetch_mexc_klines(symbol: str, interval: str = "1d", limit: int = 60) -> Optional[pd.DataFrame]:
     """
     Holt historische Candle-Daten von MEXC.
-    Gibt DataFrame mit Spalten [timestamp, open, high, low, close, volume] zurück.
+    Gibt DataFrame mit Spalten [time, open, high, low, close, volume] zurück.
     Gibt None zurück, wenn kein Pair existiert (HTTP 400).
     """
     try:
@@ -138,16 +138,15 @@ def fetch_mexc_klines(symbol: str, interval: str = "1d", limit: int = 60) -> Opt
             logging.warning(f"[MEXC] Klines-Response leer oder ungültig für {symbol}")
             return None
 
-        # Dynamisches Spalten-Mapping (8 Werte bei MEXC)
-        cols = ["timestamp", "open", "high", "low", "close", "volume", "close_time", "quote_volume"]
-        df = pd.DataFrame(data, columns=cols[:len(data[0])])
-        df = df[["timestamp", "open", "high", "low", "close", "volume"]].astype(float)
+        # --- Spalten-Mapping vereinheitlicht ---
+        df = pd.DataFrame(data, columns=["time", "open", "high", "low", "close", "volume"])
+        df["time"] = pd.to_datetime(df["time"], unit="ms")
+
         return df
 
     except Exception as e:
         logging.warning(f"[MEXC] Klines-Abfrage fehlgeschlagen ({symbol}): {e}")
         return None
-
 
 def compute_mexc_features(df: pd.DataFrame) -> Dict[str, float]:
     """Berechnet Momentum, Volumenbeschleunigung, ATH-Drawdown aus MEXC-Klines"""
