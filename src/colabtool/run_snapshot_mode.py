@@ -119,13 +119,16 @@ def run_snapshot(mode: str = "standard", offline: bool = False) -> Path:
         df = fetch_cmc_markets(pages=8, limit=250)
         logging.info(f"✅ fetch_cmc_markets: {len(df)} Coins geladen.")
 
-    # --- MEXC Mapping hinzufügen ---
-    #  try:
-    #    df = map_mexc_pairs(df)
-    #    logging.info(f"[MEXC] ✅ Mapping abgeschlossen ({df['mexc_pair'].notna().sum()} Treffer).")
-    #    
-    # except Exception as e:
-    #    logging.warning(f"[MEXC] ⚠️ Fehler beim Mapping: {e}")
+        # --- MEXC Mapping direkt nach CMC ---
+        try:
+            df = map_mexc_pairs(df)
+            logging.info(f"[MEXC] ✅ Mapping abgeschlossen ({df['mexc_pair'].notna().sum()} Treffer).")
+        except Exception as e:
+            logging.warning(f"[MEXC] ⚠️ Fehler beim Mapping: {e}")
+
+        # --- Logging vor Filterung ---
+        logging.info(f"[MEXC] 🔍 Vor Filterung: {df['mexc_pair'].notna().sum()} Coins mit MEXC-Paar")
+
     
     # ------------------------------
     # 2️⃣ Schema-Validierung
@@ -152,9 +155,6 @@ def run_snapshot(mode: str = "standard", offline: bool = False) -> Path:
 
         df = compute_feature_block(df)
         logging.info("✅ compute_feature_block abgeschlossen")
-
-        df = map_mexc_pairs(df)
-        logging.info("✅ map_mexc_pairs abgeschlossen")
 
         cand_ids = df["id"].tolist()
         df = compute_breakout_for_ids(df, cand_ids)
