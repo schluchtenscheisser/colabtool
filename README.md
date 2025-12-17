@@ -186,6 +186,14 @@ Begleitdateien:
 
 ---
 
+### 🔄 CODE_MAP-Aktualisierung
+Nach jeder Codeänderung ausführen:
+```bash
+python tools/update_codemap.py
+```
+
+---
+
 ## 9️⃣ Lizenz & Haftung
 
 Dieses Tool dient ausschließlich **Research-Zwecken**.  
