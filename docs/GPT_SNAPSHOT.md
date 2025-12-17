@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 51c837f7a6e70d46035fe41f7ec8d33b5e6da8df_
+_Generated from commit: e65868b11493a149dc6d64854ec7dc09edf12683_
 
 ## pyproject.toml
 
@@ -597,7 +597,7 @@ if __name__ == "__main__":
 
 ## src/colabtool/run_snapshot_mode.py
 
-SHA256: `d72186b60be76354c77f22d8c68718f9f9fb2e9e4bf0a1bc7a0c02b663346efc`
+SHA256: `34fc602dfec20ba1e9c3dde4bc38044cbdb60ff3e358617b7bc955160a50e9c3`
 
 ```python
 """
@@ -652,6 +652,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
 )
+
 
 # --------------------------------------------------
 # Hilfsfunktion: Score-Validierung
@@ -718,7 +719,7 @@ def run_snapshot(mode: str = "standard", offline: bool = False) -> Path:
         ])
     else:
         df = fetch_cmc_markets(pages=8, limit=250)
-        logging.info(f"✅ fetch_cmc_markets: {len(df)} Coins geladen.")
+        logging.info(f"✅ fetch_cmc_markets: {len(df)} Coins geladen, Columns: {list(df.columns)}")
 
     # ------------------------------
     # 1b️⃣ MEXC Mapping (global, unabhängig vom Modus)
@@ -729,6 +730,7 @@ def run_snapshot(mode: str = "standard", offline: bool = False) -> Path:
         logging.info(f"[MEXC] ✅ Mapping abgeschlossen ({hits} Treffer von {len(df)}).")
         if hits == 0:
             logging.warning("[MEXC] ⚠️ Keine Treffer beim Mapping – prüfe API oder Symbolabgleich.")
+        logging.info(f"[TRACE] map_mexc_pairs: {hits} gültige Paare, Beispiele: {df[['symbol','mexc_pair']].head(5).to_dict('records')}")
     except Exception as e:
         logging.warning(f"[MEXC] ⚠️ Fehler beim Mapping: {e}")
 
@@ -749,46 +751,44 @@ def run_snapshot(mode: str = "standard", offline: bool = False) -> Path:
         "current_price": float,
     }
     df = ensure_schema(df, SCHEMA_MAP)
+    logging.info(f"[TRACE] Nach ensure_schema: {len(df)} Zeilen, Columns: {list(df.columns)}")
 
     # ------------------------------
     # 3️⃣ Haupt-Pipeline (nur Live)
     # ------------------------------
     if effective_mode != "offline":
+        logging.info(f"[TRACE] Vor apply_pre_universe_filters: {len(df)} Zeilen")
         df = apply_pre_universe_filters(df)
         logging.info(f"✅ apply_pre_universe_filters: {len(df)} nach Filtern")
 
         df = compute_feature_block(df)
         logging.info("✅ compute_feature_block abgeschlossen")
-        logging.info(f"🔍 Feature-Debug: Spalten nach compute_feature_block → {list(df.columns)}")
-        logging.info(f"🔍 Vorhandene Momentum-Werte: {df['mom_30d_pct'].notna().sum() if 'mom_30d_pct' in df.columns else 0}")
+        logging.info(f"[TRACE] Spalten nach compute_feature_block → {list(df.columns)}")
+        logging.info(f"[TRACE] mom_30d_pct valide Werte: {df['mom_30d_pct'].notna().sum() if 'mom_30d_pct' in df.columns else 0}")
 
         cand_ids = df["id"].tolist()
         df = compute_breakout_for_ids(df, cand_ids)
         logging.info("✅ compute_breakout_for_ids abgeschlossen")
+        logging.info(f"[TRACE] Nach compute_breakout_for_ids: {len(df)} Zeilen")
 
         df = add_buzz_metrics_for_candidates(df)
         logging.info("✅ add_buzz_metrics_for_candidates abgeschlossen")
+        logging.info(f"[TRACE] Nach add_buzz_metrics_for_candidates: {len(df)} Zeilen")
 
     # ------------------------------
     # 4️⃣ Scoring
     # ------------------------------
+    logging.info(f"[TRACE] Vor Scoring: {len(df)} Zeilen, Columns: {list(df.columns)}")
     df = score_block(df)
     df = compute_early_score(df)
     logging.info("✅ Scores & Early Score berechnet")
+    logging.info(f"[TRACE] Nach Scoring: early_score {df['early_score'].notna().sum()}, breakout_score {df['breakout_score'].notna().sum()}")
 
     # ------------------------------
     # 5️⃣ Validierung & Backtest
     # ------------------------------
     if effective_mode != "offline":
-        # --- Debug: Feature-Check ---
-        logging.info(f"[DEBUG] Nach compute_feature_block: {len(df)} Zeilen, Columns: {list(df.columns)}")
-        if "mom_30d_pct" in df.columns:
-            valid_mom = df["mom_30d_pct"].notna().sum()
-            logging.info(f"[DEBUG] mom_30d_pct valide Werte: {valid_mom}")
-        else:
-            logging.warning("[DEBUG] mom_30d_pct fehlt komplett – compute_feature_block evtl. übersprungen.")
-
-        # --- Scores validieren ---
+        logging.info(f"[TRACE] Vor validate_scores: {len(df)} Zeilen, early_score NaN={df['early_score'].isna().sum()}, breakout_score NaN={df['breakout_score'].isna().sum()}")
         validate_scores(df)
         backtest_results = backtest_on_snapshot(df, top_k=20, horizons=[20, 40, 60])
         logging.info(f"✅ Backtest abgeschlossen ({len(backtest_results)} Zeilen)")
@@ -799,6 +799,7 @@ def run_snapshot(mode: str = "standard", offline: bool = False) -> Path:
     # ------------------------------
     # 6️⃣ Export
     # ------------------------------
+    logging.info(f"[TRACE] Vor Export: {len(df)} Zeilen, Columns: {list(df.columns)}")
     full_df = make_fulldata(df)
 
     export_filename = (
@@ -820,11 +821,11 @@ def run_snapshot(mode: str = "standard", offline: bool = False) -> Path:
         alias_path = snapshot_dir / "seed_alias.csv"
 
         df.to_csv(cg_path, index=False)
-        logging.info("✅ cg_markets.csv gespeichert")
+        logging.info(f"✅ cg_markets.csv gespeichert ({cg_path})")
 
         if "mexc_pair" in df.columns:
             df[["id", "symbol", "mexc_pair"]].to_csv(mexc_path, index=False)
-            logging.info("✅ mexc_pairs.csv gespeichert")
+            logging.info(f"✅ mexc_pairs.csv gespeichert ({mexc_path})")
 
         if not alias_path.exists():
             seed_alias = get_alias_seed()
