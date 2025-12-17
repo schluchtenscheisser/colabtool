@@ -191,10 +191,18 @@ def compute_feature_block(df_in: pd.DataFrame) -> pd.DataFrame:
     - bevorzugt Momentum & Volumen aus MEXC-Klines
     - fallback auf CMC-Prozentwerte
     """
-    logging.info("🔧 compute_feature_block (Hybrid CMC+MEXC) gestartet ...")
-    df = df_in.copy()
+    logging.info("🧩 Starte compute_feature_block() ...")
 
-    mom7, mom30, vol_acc, ath_dd = [], [], [], []
+    # Ergebnislisten initialisieren (Hotfix gegen NameError)
+    mom7 = []
+    mom30 = []
+    vol_acc = []
+    ath_dd = []
+    ath_vals = []
+    ath_dates = []
+    price_sources = []
+
+    df = df_in.copy()
 
     for _, row in df.iterrows():
         # --- Symbol ermitteln & validieren ---
@@ -268,7 +276,9 @@ def compute_feature_block(df_in: pd.DataFrame) -> pd.DataFrame:
 
     df = ensure_schema(df, schema_map)
     
-    logging.info(f"✅ compute_feature_block abgeschlossen – {len(df)} Coins verarbeitet.")
+    logging.info(f"[features] 🧮 compute_feature_block abgeschlossen – {len(df)} Zeilen verarbeitet")
+    logging.info(f"[features] Beispiel-Ausgabe: mom_7d={len(mom7)}, ath_vals={len(ath_vals)}, price_sources={len(price_sources)}")
+    
     return df
     
 # ---------- Segmentierung ----------
