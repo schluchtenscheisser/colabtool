@@ -26,9 +26,13 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install pandas numpy requests
-
+          
       - name: 🧩 Generate CODE_MAP.md
-        run: python tools/update_codemap.py
+        run: |
+          cd $GITHUB_WORKSPACE
+          echo "📂 Current directory: $(pwd)"
+          ls -R
+          python ./colabtool/tools/update_codemap.py
 
       - name: 💾 Commit & Push changes if needed
         run: |
