@@ -3,7 +3,10 @@ update_codemap.py – Automatische CODE_MAP-Generierung mit Call-Dependency-Anal
 --------------------------------------------------------------------------------
 Scant alle Python-Module im Verzeichnis src/colabtool/
 und erzeugt eine aktualisierte docs/CODE_MAP.md.
-Neu: erkennt, welche Funktionen andere Funktionen aufrufen (Call Graph).
+Erkennt:
+- welche Funktionen andere Funktionen aufrufen (Call Graph)
+- unterscheidet interne und externe Aufrufe
+- erstellt am Ende eine Abhängigkeits-Statistik
 """
 
 import ast
@@ -31,9 +34,8 @@ def extract_module_info(file_path: Path):
     functions, classes, imports, variables = [], [], [], []
     calls = defaultdict(set)
     current_function = None
-    parent_stack = []
 
-    # Liste bekannter Builtins, die im Call Graph ausgefiltert werden
+    # Builtins, die im Call Graph ausgefiltert werden
     BUILTIN_FUNCS = {
         "len", "print", "range", "type", "str", "int", "float", "list",
         "dict", "set", "max", "min", "sum", "any", "all", "zip", "map",
@@ -47,9 +49,7 @@ def extract_module_info(file_path: Path):
             nonlocal current_function
             prev = current_function
             current_function = node.name
-            parent_stack.append(node.name)
             self.generic_visit(node)
-            parent_stack.pop()
             current_function = prev
 
         def visit_Call(self, node):
@@ -59,12 +59,10 @@ def extract_module_info(file_path: Path):
                     func_name = node.func.id
                 elif isinstance(node.func, ast.Attribute):
                     func_name = node.func.attr
-
                 if func_name and func_name not in BUILTIN_FUNCS:
                     calls[current_function].add(func_name)
             self.generic_visit(node)
 
-    # Call-Graph scannen
     CallVisitor().visit(tree)
 
     # Funktions- und Moduldefinitionen auslesen
@@ -104,6 +102,7 @@ def scan_repository():
 def build_codemap(modules):
     """Erstellt die Markdown-Dokumentation mit Funktions- und Aufrufinformationen."""
     lines = [HEADER, "## 🧩 Modulübersicht\n"]
+    stats = {}  # Statistik: Modul -> (interne, externe)
 
     for mod, info in sorted(modules.items()):
         lines.append(f"### 📄 `{mod}`\n")
@@ -114,21 +113,48 @@ def build_codemap(modules):
         lines.append("**Imports:** " + (", ".join(info["imports"]) or "–") + "\n")
         lines.append("---\n")
 
-    # Ergänze Call Graph
+    # Ergänze Call Graph (nach Modulen gruppiert, intern/extern getrennt)
     lines.append("\n## 🔗 Funktionsabhängigkeiten (Call Graph)\n")
-    lines.append("| Aufrufende Funktion | Ruft auf |\n|----------------------|-----------|\n")
 
-    all_calls = []
-    for mod, info in modules.items():
-        for func, called in info["calls"].items():
-            if called:
-                all_calls.append((f"{mod}:{func}", ", ".join(called)))
+    has_any_calls = False
+    for mod, info in sorted(modules.items()):
+        if any(info["calls"].values()):
+            has_any_calls = True
+            lines.append(f"\n### 📄 {mod}\n")
+            lines.append("| Aufrufende Funktion | Interne Aufrufe | Externe Aufrufe |\n")
+            lines.append("|----------------------|------------------|------------------|\n")
 
-    if not all_calls:
-        lines.append("| – | – |\n")
-    else:
-        for caller, targets in sorted(all_calls):
-            lines.append(f"| `{caller}` | {targets} |\n")
+            func_set = set(info["functions"])  # Alle Funktionen des Moduls
+            internal_total, external_total = 0, 0
+
+            for func, called in sorted(info["calls"].items()):
+                if called:
+                    internal = sorted([c for c in called if c in func_set])
+                    external = sorted([c for c in called if c not in func_set])
+                    internal_total += len(internal)
+                    external_total += len(external)
+                    lines.append(
+                        f"| `{func}` | "
+                        f"{', '.join(internal) if internal else '–'} | "
+                        f"{', '.join(external) if external else '–'} |\n"
+                    )
+
+            stats[mod] = (internal_total, external_total)
+
+    if not has_any_calls:
+        lines.append("\n| – | – | – |\n")
+
+    # Statistikabschnitt am Ende
+    if stats:
+        lines.append("\n---\n\n## 📊 Abhängigkeits-Statistik\n")
+        lines.append("| Modul | Interne Aufrufe | Externe Aufrufe | Gesamt |\n")
+        lines.append("|--------|------------------|------------------|---------|\n")
+        for mod, (i, e) in sorted(stats.items(), key=lambda x: (x[1][1] + x[1][0]), reverse=True):
+            lines.append(f"| {mod} | {i} | {e} | {i + e} |\n")
+        lines.append(
+            "\n🧠 *Hinweis:* Viele **externe Aufrufe** deuten auf hohe Kopplung hin → "
+            "Kandidaten für Refactoring oder Modularisierung.\n"
+        )
 
     return "\n".join(lines)
 
@@ -146,4 +172,4 @@ if __name__ == "__main__":
     modules = scan_repository()
     content = build_codemap(modules)
     write_codemap(content)
-    print("✅ Fertig! CODE_MAP.md enthält jetzt Funktionsabhängigkeiten.")
+    print("✅ Fertig! CODE_MAP.md enthält jetzt interne/externe Funktionsabhängigkeiten + Statistik.")
