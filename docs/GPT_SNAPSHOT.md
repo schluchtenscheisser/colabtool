@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: ee516fcfb9ff1b4610a8e7bf61676f5c90af4dea_
+_Generated from commit: 1f9dfdf6c9702f895cec50fff6c083faa4639b35_
 
 ## pyproject.toml
 
@@ -597,7 +597,7 @@ if __name__ == "__main__":
 
 ## src/colabtool/run_snapshot_mode.py
 
-SHA256: `5eecbef02f1dad6aefb1736f28cc46fd27650d3c6192632cc4e8495d807d77af`
+SHA256: `0836ad92be15af084dad4cd9d5ce6ba233a49b06232a336835766a214fd018ae`
 
 ```python
 """
@@ -724,6 +724,7 @@ def run_snapshot(mode: str = "standard", offline: bool = False) -> Path:
     # ------------------------------
     # 1b️⃣ MEXC Mapping (global, unabhängig vom Modus)
     # ------------------------------
+    print(">>> reached mapping block <<<")
     logging.info("[TRACE] >>> Starte map_mexc_pairs() in Snapshot-Pipeline")
     try:
         df = map_mexc_pairs(df)
