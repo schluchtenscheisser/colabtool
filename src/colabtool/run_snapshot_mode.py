@@ -71,6 +71,60 @@ def validate_scores(df: pd.DataFrame) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Diagnose-Funktion: Einzeltest der Pipeline
+# ---------------------------------------------------------------------------
+def build_snapshot_pipeline(df):
+    """
+    Führt CMC → MEXC → Feature → Score sequentiell aus.
+    Gibt DataFrame mit allen berechneten Spalten zurück.
+    Dient der isolierten Diagnose (ohne Export, Backtest etc.)
+    """
+    import logging
+    from colabtool.pre_universe import apply_pre_universe_filters
+    from colabtool.features import compute_feature_block
+    from colabtool.breakout import compute_breakout_for_ids
+    from colabtool.buzz import add_buzz_metrics_for_candidates
+    from colabtool.scores import score_block, compute_early_score
+    from colabtool.data_sources_cmc import map_mexc_pairs
+
+    logging.info("🧪 [DIAG] Starte Pipeline-Diagnose")
+    print(f"[DIAG] Start mit {len(df)} Zeilen")
+
+    try:
+        df = map_mexc_pairs(df)
+        print(f"[DIAG] Nach map_mexc_pairs(): {df['mexc_pair'].notna().sum()} Treffer")
+    except Exception as e:
+        logging.error(f"[DIAG] Fehler in map_mexc_pairs: {e}", exc_info=True)
+        return df
+
+    try:
+        df = apply_pre_universe_filters(df)
+        print(f"[DIAG] Nach apply_pre_universe_filters(): {len(df)} Zeilen")
+        df = compute_feature_block(df)
+        print(f"[DIAG] Nach compute_feature_block(): Spalten = {len(df.columns)}")
+    except Exception as e:
+        logging.error(f"[DIAG] Fehler in Feature-Block: {e}", exc_info=True)
+
+    try:
+        cand_ids = df["id"].tolist()
+        df = compute_breakout_for_ids(df, cand_ids)
+        df = add_buzz_metrics_for_candidates(df)
+        print(f"[DIAG] Nach Breakout/Buzz: Spalten = {len(df.columns)}")
+    except Exception as e:
+        logging.error(f"[DIAG] Fehler in Breakout/Buzz: {e}", exc_info=True)
+
+    try:
+        df = score_block(df)
+        df = compute_early_score(df)
+        print(f"[DIAG] Nach Scoring: early_score {df['early_score'].notna().sum()}, breakout_score {df['breakout_score'].notna().sum()}")
+    except Exception as e:
+        logging.error(f"[DIAG] Fehler im Scoring: {e}", exc_info=True)
+
+    logging.info("✅ [DIAG] Pipeline-Test abgeschlossen")
+    return df
+
+
+# ---------------------------------------------------------------------------
 # Hauptfunktion: Snapshot-Pipeline
 # ---------------------------------------------------------------------------
 def run_snapshot(mode: str = "standard", offline: bool = False) -> Path:
@@ -204,3 +258,14 @@ if __name__ == "__main__":
     mode = "offline" if args.offline else args.mode
     logging.info(f"🚀 Starte CLI-Snapshot mit Modus: {mode}")
     run_snapshot(mode=mode, offline=args.offline)
+
+
+# --- Diagnosemodus (optional) ---
+if mode == "fast":
+    print("⚙️ Running diagnostic pipeline for testing …")
+    df_test = fetch_cmc_markets(pages=1, limit=20)
+    df_result = build_snapshot_pipeline(df_test)
+    print("[DIAG] Ergebnis: early_score notna =", df_result["early_score"].notna().sum())
+    print("[DIAG] Ergebnis: breakout_score notna =", df_result["breakout_score"].notna().sum())
+    exit(0)
+
