@@ -116,8 +116,8 @@ def run_snapshot(mode: str = "standard", offline: bool = False) -> Path:
     #         },
     #     ])
     # else:
-        df = fetch_cmc_markets(pages=8, limit=250)
-        logging.info(f"✅ fetch_cmc_markets: {len(df)} Coins geladen, Columns: {list(df.columns)}")
+    df = fetch_cmc_markets(pages=8, limit=250)
+    logging.info(f"✅ fetch_cmc_markets: {len(df)} Coins geladen, Columns: {list(df.columns)}")
 
     # ------------------------------
     # 1b️⃣ MEXC Mapping (global, unabhängig vom Modus)
