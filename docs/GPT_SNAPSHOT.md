@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 1a9d47f58e20d55994bd02daef4dbc9886fcc772_
+_Generated from commit: a2fb685afadebf70fb66503bb45f549ce2ca3457_
 
 ## pyproject.toml
 
@@ -954,7 +954,7 @@ def export_snapshot(df, export_path: str | None = None):
 
 ## src/colabtool/features.py
 
-SHA256: `05edca5448209edd7132d8b882069bb30e605021f2a36b72aa61629979cbc35a`
+SHA256: `eb9e4943fcaf2c401bb5e128e8d2189c8682eaf0a240e53087414137ae2d7e69`
 
 ```python
 # modules/features.py
@@ -1150,10 +1150,18 @@ def compute_feature_block(df_in: pd.DataFrame) -> pd.DataFrame:
     - bevorzugt Momentum & Volumen aus MEXC-Klines
     - fallback auf CMC-Prozentwerte
     """
-    logging.info("🔧 compute_feature_block (Hybrid CMC+MEXC) gestartet ...")
-    df = df_in.copy()
+    logging.info("🧩 Starte compute_feature_block() ...")
 
-    mom7, mom30, vol_acc, ath_dd = [], [], [], []
+    # Ergebnislisten initialisieren (Hotfix gegen NameError)
+    mom7 = []
+    mom30 = []
+    vol_acc = []
+    ath_dd = []
+    ath_vals = []
+    ath_dates = []
+    price_sources = []
+
+    df = df_in.copy()
 
     for _, row in df.iterrows():
         # --- Symbol ermitteln & validieren ---
@@ -1227,7 +1235,9 @@ def compute_feature_block(df_in: pd.DataFrame) -> pd.DataFrame:
 
     df = ensure_schema(df, schema_map)
     
-    logging.info(f"✅ compute_feature_block abgeschlossen – {len(df)} Coins verarbeitet.")
+    logging.info(f"[features] 🧮 compute_feature_block abgeschlossen – {len(df)} Zeilen verarbeitet")
+    logging.info(f"[features] Beispiel-Ausgabe: mom_7d={len(mom7)}, ath_vals={len(ath_vals)}, price_sources={len(price_sources)}")
+    
     return df
     
 # ---------- Segmentierung ----------
