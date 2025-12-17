@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 9bea4e5aea885f63035a86c8d1f76566bbf8a61a_
+_Generated from commit: bc8367c3e9ec69296c214367484ced62645c584d_
 
 ## pyproject.toml
 
@@ -52,7 +52,7 @@ python-dotenv>=1.0.0
 
 ## README.md
 
-SHA256: `f66b07da8398fb1ec9fca962ae2482c085508639f80fe0fa6c24b7995257aa58`
+SHA256: `c8b861e7fba26ae282ef0e167f7638f5761ec299a82d4b242238b92a69d32db6`
 
 ```markdown
 
@@ -240,6 +240,14 @@ für dich und für ChatGPT in neuen Sessions.
 
 Begleitdateien:  
 `cg_markets.csv`, `mexc_pairs.csv`, `seed_alias.csv`
+
+---
+
+### 🔄 CODE_MAP-Aktualisierung
+Nach jeder Codeänderung ausführen:
+```bash
+python tools/update_codemap.py
+```
 
 ---
 
