@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 305b325fcbecf41925f0035b4c40fe38dbc5e7cc_
+_Generated from commit: ee516fcfb9ff1b4610a8e7bf61676f5c90af4dea_
 
 ## pyproject.toml
 
@@ -597,7 +597,7 @@ if __name__ == "__main__":
 
 ## src/colabtool/run_snapshot_mode.py
 
-SHA256: `97a331e3b275388bacd2b1494b90dcaa4dc4b2ad6438f08d93a40f5f352fbe58`
+SHA256: `5eecbef02f1dad6aefb1736f28cc46fd27650d3c6192632cc4e8495d807d77af`
 
 ```python
 """
@@ -733,7 +733,7 @@ def run_snapshot(mode: str = "standard", offline: bool = False) -> Path:
             logging.warning("[MEXC] ⚠️ Keine Treffer beim Mapping – prüfe API oder Symbolabgleich.")
         logging.info(f"[TRACE] map_mexc_pairs: {hits} gültige Paare, Beispiele: {df[['symbol','mexc_pair']].head(5).to_dict('records')}")
     except Exception as e:
-        logging.warning(f"[MEXC] ⚠️ Fehler beim Mapping: {e}")
+        logging.error(f"[MEXC] ❌ Fehler beim Mapping: {e}", exc_info=True)
 
     logging.info(f"[MEXC] 🔍 Vor Filterung: {df['mexc_pair'].notna().sum()} Coins mit MEXC-Paar")
 
