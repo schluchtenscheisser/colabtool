@@ -122,6 +122,7 @@ def run_snapshot(mode: str = "standard", offline: bool = False) -> Path:
     # ------------------------------
     # 1b️⃣ MEXC Mapping (global, unabhängig vom Modus)
     # ------------------------------
+    print(">>> reached mapping block <<<")
     logging.info("[TRACE] >>> Starte map_mexc_pairs() in Snapshot-Pipeline")
     try:
         df = map_mexc_pairs(df)
