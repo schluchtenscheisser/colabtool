@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 52a32a8ffb26695391248a1c06f7c6d6bf364e11_
+_Generated from commit: 51c837f7a6e70d46035fe41f7ec8d33b5e6da8df_
 
 ## pyproject.toml
 
@@ -597,7 +597,7 @@ if __name__ == "__main__":
 
 ## src/colabtool/run_snapshot_mode.py
 
-SHA256: `ea1a7b8d61c0550f2a97cf4b5331aad52e03d84536c42814d03cf272008b594f`
+SHA256: `d72186b60be76354c77f22d8c68718f9f9fb2e9e4bf0a1bc7a0c02b663346efc`
 
 ```python
 """
@@ -759,6 +759,8 @@ def run_snapshot(mode: str = "standard", offline: bool = False) -> Path:
 
         df = compute_feature_block(df)
         logging.info("✅ compute_feature_block abgeschlossen")
+        logging.info(f"🔍 Feature-Debug: Spalten nach compute_feature_block → {list(df.columns)}")
+        logging.info(f"🔍 Vorhandene Momentum-Werte: {df['mom_30d_pct'].notna().sum() if 'mom_30d_pct' in df.columns else 0}")
 
         cand_ids = df["id"].tolist()
         df = compute_breakout_for_ids(df, cand_ids)
