@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: e31e2dcfc6d970f203da3f079a5e0616b25091f1_
+_Generated from commit: fa2f1e0f5db0c6f0a18d9fd5ef3d52606a2f8753_
 
 ## pyproject.toml
 
@@ -597,7 +597,7 @@ if __name__ == "__main__":
 
 ## src/colabtool/run_snapshot_mode.py
 
-SHA256: `4a6a3b4c5ce7cf6d8c3dc7aa0953af771f59214bf4f20ec562a3beae2dac6ecb`
+SHA256: `d4d2be315f5981698b313d56a48e3cb5f33eb90b9f5e131d583075fdfd03727b`
 
 ```python
 """
@@ -670,6 +670,60 @@ def validate_scores(df: pd.DataFrame) -> None:
         raise ValueError(f"⚠️ Zu wenige valide Scores: {valid_count}")
 
     logging.info(f"✅ Score-Validierung bestanden ({valid_count} valide Zeilen)")
+
+
+# ---------------------------------------------------------------------------
+# Diagnose-Funktion: Einzeltest der Pipeline
+# ---------------------------------------------------------------------------
+def build_snapshot_pipeline(df):
+    """
+    Führt CMC → MEXC → Feature → Score sequentiell aus.
+    Gibt DataFrame mit allen berechneten Spalten zurück.
+    Dient der isolierten Diagnose (ohne Export, Backtest etc.)
+    """
+    import logging
+    from colabtool.pre_universe import apply_pre_universe_filters
+    from colabtool.features import compute_feature_block
+    from colabtool.breakout import compute_breakout_for_ids
+    from colabtool.buzz import add_buzz_metrics_for_candidates
+    from colabtool.scores import score_block, compute_early_score
+    from colabtool.data_sources_cmc import map_mexc_pairs
+
+    logging.info("🧪 [DIAG] Starte Pipeline-Diagnose")
+    print(f"[DIAG] Start mit {len(df)} Zeilen")
+
+    try:
+        df = map_mexc_pairs(df)
+        print(f"[DIAG] Nach map_mexc_pairs(): {df['mexc_pair'].notna().sum()} Treffer")
+    except Exception as e:
+        logging.error(f"[DIAG] Fehler in map_mexc_pairs: {e}", exc_info=True)
+        return df
+
+    try:
+        df = apply_pre_universe_filters(df)
+        print(f"[DIAG] Nach apply_pre_universe_filters(): {len(df)} Zeilen")
+        df = compute_feature_block(df)
+        print(f"[DIAG] Nach compute_feature_block(): Spalten = {len(df.columns)}")
+    except Exception as e:
+        logging.error(f"[DIAG] Fehler in Feature-Block: {e}", exc_info=True)
+
+    try:
+        cand_ids = df["id"].tolist()
+        df = compute_breakout_for_ids(df, cand_ids)
+        df = add_buzz_metrics_for_candidates(df)
+        print(f"[DIAG] Nach Breakout/Buzz: Spalten = {len(df.columns)}")
+    except Exception as e:
+        logging.error(f"[DIAG] Fehler in Breakout/Buzz: {e}", exc_info=True)
+
+    try:
+        df = score_block(df)
+        df = compute_early_score(df)
+        print(f"[DIAG] Nach Scoring: early_score {df['early_score'].notna().sum()}, breakout_score {df['breakout_score'].notna().sum()}")
+    except Exception as e:
+        logging.error(f"[DIAG] Fehler im Scoring: {e}", exc_info=True)
+
+    logging.info("✅ [DIAG] Pipeline-Test abgeschlossen")
+    return df
 
 
 # ---------------------------------------------------------------------------
@@ -806,6 +860,17 @@ if __name__ == "__main__":
     mode = "offline" if args.offline else args.mode
     logging.info(f"🚀 Starte CLI-Snapshot mit Modus: {mode}")
     run_snapshot(mode=mode, offline=args.offline)
+
+
+# --- Diagnosemodus (optional) ---
+if mode == "fast":
+    print("⚙️ Running diagnostic pipeline for testing …")
+    df_test = fetch_cmc_markets(pages=1, limit=20)
+    df_result = build_snapshot_pipeline(df_test)
+    print("[DIAG] Ergebnis: early_score notna =", df_result["early_score"].notna().sum())
+    print("[DIAG] Ergebnis: breakout_score notna =", df_result["breakout_score"].notna().sum())
+    exit(0)
+
 
 ```
 
@@ -6135,7 +6200,7 @@ except Exception:
 | Modul | Funktionen | Klassen |
 |-------|-------------|----------|
 | `src/colabtool/data_sources_cmc.py` | _log, _on_get, fetch_cmc_markets, _fetch_mexc_pairs, map_mexc_pairs, map_tvl, load_or_fetch_markets, write_cache | - |
-| `src/colabtool/run_snapshot_mode.py` | validate_scores, run_snapshot | - |
+| `src/colabtool/run_snapshot_mode.py` | validate_scores, build_snapshot_pipeline, run_snapshot | - |
 | `src/colabtool/export.py` | _safe_col_width, reorder_columns, write_sheet, write_meta_sheet, create_full_excel_export, export_snapshot | - |
 | `src/colabtool/features.py` | _ensure_series, _num_series, _lc, is_stable_like, is_wrapped_like, peg_like_mask, exclusion_mask, fetch_mexc_klines, compute_mexc_features, compute_feature_block, tag_segment | - |
 | `src/colabtool/breakout.py` | _mexc_klines, _valid_pair, _to_df, _pct_change, _rolling_max, _percentile_rank, _zscore, _beta, _features_from_klines, _prep_betas, compute_breakout_for_ids | - |
