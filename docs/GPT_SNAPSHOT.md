@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: fa2f1e0f5db0c6f0a18d9fd5ef3d52606a2f8753_
+_Generated from commit: 9c65a8b9c747ed87c1902cf95590b6022df1fd88_
 
 ## pyproject.toml
 
@@ -597,41 +597,19 @@ if __name__ == "__main__":
 
 ## src/colabtool/run_snapshot_mode.py
 
-SHA256: `d4d2be315f5981698b313d56a48e3cb5f33eb90b9f5e131d583075fdfd03727b`
+SHA256: `67a76acb656f2994a6c4fb666d02f08925fea0284dd81697991fbcde0cf98a39`
 
 ```python
 """
-Run Snapshot Mode – vollständige Early-Signal-Pipeline mit Backtest und Export.
-Erzeugt snapshots/YYYYMMDD/ mit allen Daten und Excel-Dateien.
-Unterstützt Standard-, Fast- und Offline-Modus.
+Run Snapshot Mode – Vereinfachte Pipeline (CMC → MEXC → Feature → Scoring → Backtest → Export)
+Nur regulärer Snapshot-Lauf, keine Modi.
 """
 
-import os
-import argparse
 import logging
 from datetime import datetime
 from pathlib import Path
 import pandas as pd
 
-logging.info("🚀 Snapshot Mode nutzt CoinMarketCap als Primärquelle.")
-
-# ENV-Vars (Standardwerte)
-os.environ.update({
-    "ENABLE_PIT_CATEGORIES": "1",
-    "ENABLE_PIT_MEXC": "1",
-    "ENABLE_PIT_ALIAS": "1",
-    "CG_FORCE_FREE": "1",
-    "CG_SKIP_AFTER_429": "1",
-    "CG_MAX_ATTEMPTS": "1",
-    "CG_MIN_INTERVAL_S": "3.5",
-    "CG_CATS_TIME_BUDGET_S": "120",
-    "PROVIDERS_CATS_TIME_BUDGET_S": "90",
-    "REQUIRE_MEXC": "1",
-    "LIGHT_BREAKOUT_ALL": "0",
-    "BUZZ_HALF_LIFE_H": "48",
-})
-
-# Core Imports
 from colabtool.data_sources_cmc import fetch_cmc_markets, map_mexc_pairs
 from colabtool.data_sources import get_alias_seed
 from colabtool.pre_universe import apply_pre_universe_filters
@@ -643,7 +621,6 @@ from colabtool.backtest import backtest_on_snapshot
 from colabtool.export_helpers import make_fulldata
 from colabtool.export import create_full_excel_export
 from colabtool.utils.validation import ensure_schema
-
 
 # ---------------------------------------------------------------------------
 # Logging Setup
@@ -673,86 +650,22 @@ def validate_scores(df: pd.DataFrame) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Diagnose-Funktion: Einzeltest der Pipeline
-# ---------------------------------------------------------------------------
-def build_snapshot_pipeline(df):
-    """
-    Führt CMC → MEXC → Feature → Score sequentiell aus.
-    Gibt DataFrame mit allen berechneten Spalten zurück.
-    Dient der isolierten Diagnose (ohne Export, Backtest etc.)
-    """
-    import logging
-    from colabtool.pre_universe import apply_pre_universe_filters
-    from colabtool.features import compute_feature_block
-    from colabtool.breakout import compute_breakout_for_ids
-    from colabtool.buzz import add_buzz_metrics_for_candidates
-    from colabtool.scores import score_block, compute_early_score
-    from colabtool.data_sources_cmc import map_mexc_pairs
-
-    logging.info("🧪 [DIAG] Starte Pipeline-Diagnose")
-    print(f"[DIAG] Start mit {len(df)} Zeilen")
-
-    try:
-        df = map_mexc_pairs(df)
-        print(f"[DIAG] Nach map_mexc_pairs(): {df['mexc_pair'].notna().sum()} Treffer")
-    except Exception as e:
-        logging.error(f"[DIAG] Fehler in map_mexc_pairs: {e}", exc_info=True)
-        return df
-
-    try:
-        df = apply_pre_universe_filters(df)
-        print(f"[DIAG] Nach apply_pre_universe_filters(): {len(df)} Zeilen")
-        df = compute_feature_block(df)
-        print(f"[DIAG] Nach compute_feature_block(): Spalten = {len(df.columns)}")
-    except Exception as e:
-        logging.error(f"[DIAG] Fehler in Feature-Block: {e}", exc_info=True)
-
-    try:
-        cand_ids = df["id"].tolist()
-        df = compute_breakout_for_ids(df, cand_ids)
-        df = add_buzz_metrics_for_candidates(df)
-        print(f"[DIAG] Nach Breakout/Buzz: Spalten = {len(df.columns)}")
-    except Exception as e:
-        logging.error(f"[DIAG] Fehler in Breakout/Buzz: {e}", exc_info=True)
-
-    try:
-        df = score_block(df)
-        df = compute_early_score(df)
-        print(f"[DIAG] Nach Scoring: early_score {df['early_score'].notna().sum()}, breakout_score {df['breakout_score'].notna().sum()}")
-    except Exception as e:
-        logging.error(f"[DIAG] Fehler im Scoring: {e}", exc_info=True)
-
-    logging.info("✅ [DIAG] Pipeline-Test abgeschlossen")
-    return df
-
-
-# ---------------------------------------------------------------------------
 # Hauptfunktion: Snapshot-Pipeline
 # ---------------------------------------------------------------------------
-def run_snapshot(mode: str = "standard", offline: bool = False) -> Path:
-    """
-    Führt den vollständigen Snapshot-Lauf aus.
-    mode: 'standard' | 'fast' | 'offline'
-    offline=True erzwingt synthetische Mock-Daten (keine API-Aufrufe)
-    """
+def run_snapshot() -> Path:
+    """Führt den vollständigen Snapshot-Lauf aus (CMC → MEXC → Feature → Scoring → Backtest → Export)."""
 
     ASOF_DATE = datetime.today().strftime("%Y%m%d")
     snapshot_dir = Path("snapshots") / ASOF_DATE
     snapshot_dir.mkdir(parents=True, exist_ok=True)
 
-    effective_mode = "offline" if offline or mode == "offline" else mode
-    logging.info(f"🚀 Starte Snapshot-Lauf ({effective_mode}) für {ASOF_DATE}")
+    logging.info(f"🚀 Starte Snapshot-Lauf für {ASOF_DATE}")
 
-    # ------------------------------
-    # 1️⃣ Universe laden (immer live)
-    # ------------------------------
+    # 1️⃣ Universe laden (CMC)
     df = fetch_cmc_markets(pages=8, limit=250)
-    logging.info(f"✅ fetch_cmc_markets: {len(df)} Coins geladen, Columns: {list(df.columns)}")
+    logging.info(f"✅ [CMC] {len(df)} Coins geladen, Columns: {list(df.columns)}")
 
-    # ------------------------------
-    # 1b️⃣ MEXC Mapping
-    # ------------------------------
-    print(">>> reached mapping block <<<")
+    # 2️⃣ MEXC Mapping
     logging.info("[TRACE] Starte map_mexc_pairs() in Snapshot-Pipeline")
     try:
         df = map_mexc_pairs(df)
@@ -760,15 +673,12 @@ def run_snapshot(mode: str = "standard", offline: bool = False) -> Path:
         logging.info(f"[MEXC] ✅ Mapping abgeschlossen ({hits} Treffer von {len(df)}).")
         if hits == 0:
             logging.warning("[MEXC] ⚠️ Keine Treffer beim Mapping – prüfe API oder Symbolabgleich.")
-        logging.info(f"[TRACE] map_mexc_pairs: {hits} gültige Paare, Beispiele: {df[['symbol','mexc_pair']].head(5).to_dict('records')}")
     except Exception as e:
         logging.error(f"[MEXC] ❌ Fehler beim Mapping: {e}", exc_info=True)
 
     logging.info(f"[MEXC] 🔍 Vor Filterung: {df['mexc_pair'].notna().sum()} Coins mit MEXC-Paar")
 
-    # ------------------------------
-    # 2️⃣ Schema-Validierung
-    # ------------------------------
+    # 3️⃣ Schema-Validierung
     SCHEMA_MAP = {
         "id": str,
         "symbol": str,
@@ -783,9 +693,7 @@ def run_snapshot(mode: str = "standard", offline: bool = False) -> Path:
     df = ensure_schema(df, SCHEMA_MAP)
     logging.info(f"[TRACE] Nach ensure_schema: {len(df)} Zeilen, Columns: {list(df.columns)}")
 
-    # ------------------------------
-    # 3️⃣ Feature- & Momentum-Berechnung
-    # ------------------------------
+    # 4️⃣ Feature- & Momentum-Berechnung
     logging.info(f"[TRACE] Vor apply_pre_universe_filters: {len(df)} Zeilen")
     df = apply_pre_universe_filters(df)
     logging.info(f"✅ apply_pre_universe_filters: {len(df)} nach Filtern")
@@ -800,24 +708,18 @@ def run_snapshot(mode: str = "standard", offline: bool = False) -> Path:
     df = add_buzz_metrics_for_candidates(df)
     logging.info("✅ add_buzz_metrics_for_candidates abgeschlossen")
 
-    # ------------------------------
-    # 4️⃣ Scoring
-    # ------------------------------
+    # 5️⃣ Scoring
     logging.info(f"[TRACE] Vor Scoring: {len(df)} Zeilen")
     df = score_block(df)
     df = compute_early_score(df)
     logging.info("✅ Scores & Early Score berechnet")
 
-    # ------------------------------
-    # 5️⃣ Validierung & Backtest
-    # ------------------------------
+    # 6️⃣ Validierung & Backtest
     validate_scores(df)
     backtest_results = backtest_on_snapshot(df, top_k=20, horizons=[20, 40, 60])
     logging.info(f"✅ Backtest abgeschlossen ({len(backtest_results)} Zeilen)")
 
-    # ------------------------------
-    # 6️⃣ Export
-    # ------------------------------
+    # 7️⃣ Export
     full_df = make_fulldata(df)
     export_filename = f"{ASOF_DATE}_fullsnapshot.xlsx"
     export_path = snapshot_dir / export_filename
@@ -825,9 +727,7 @@ def run_snapshot(mode: str = "standard", offline: bool = False) -> Path:
     logging.info(f"📦 Erzeuge Excel → {export_path}")
     create_full_excel_export(full_df, export_path, extra_sheets={"Backtest": backtest_results})
 
-    # ------------------------------
-    # 7️⃣ CSV-Exports
-    # ------------------------------
+    # 8️⃣ CSV-Exports
     cg_path = snapshot_dir / "cmc_markets.csv"
     mexc_path = snapshot_dir / "mexc_pairs.csv"
     alias_path = snapshot_dir / "seed_alias.csv"
@@ -852,25 +752,8 @@ def run_snapshot(mode: str = "standard", offline: bool = False) -> Path:
 # CLI Entry Point
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run snapshot pipeline (Early Signal Engine)")
-    parser.add_argument("--mode", choices=["standard", "fast", "offline"], default="standard", help="Snapshot-Modus")
-    parser.add_argument("--offline", action="store_true", help="Offline-Datenmodus (keine API-Aufrufe)")
-    args = parser.parse_args()
-
-    mode = "offline" if args.offline else args.mode
-    logging.info(f"🚀 Starte CLI-Snapshot mit Modus: {mode}")
-    run_snapshot(mode=mode, offline=args.offline)
-
-
-# --- Diagnosemodus (optional) ---
-if mode == "fast":
-    print("⚙️ Running diagnostic pipeline for testing …")
-    df_test = fetch_cmc_markets(pages=1, limit=20)
-    df_result = build_snapshot_pipeline(df_test)
-    print("[DIAG] Ergebnis: early_score notna =", df_result["early_score"].notna().sum())
-    print("[DIAG] Ergebnis: breakout_score notna =", df_result["breakout_score"].notna().sum())
-    exit(0)
-
+    logging.info("🚀 Starte regulären Snapshot-Lauf (kein Modus-System mehr aktiv).")
+    run_snapshot()
 
 ```
 
@@ -6200,7 +6083,7 @@ except Exception:
 | Modul | Funktionen | Klassen |
 |-------|-------------|----------|
 | `src/colabtool/data_sources_cmc.py` | _log, _on_get, fetch_cmc_markets, _fetch_mexc_pairs, map_mexc_pairs, map_tvl, load_or_fetch_markets, write_cache | - |
-| `src/colabtool/run_snapshot_mode.py` | validate_scores, build_snapshot_pipeline, run_snapshot | - |
+| `src/colabtool/run_snapshot_mode.py` | validate_scores, run_snapshot | - |
 | `src/colabtool/export.py` | _safe_col_width, reorder_columns, write_sheet, write_meta_sheet, create_full_excel_export, export_snapshot | - |
 | `src/colabtool/features.py` | _ensure_series, _num_series, _lc, is_stable_like, is_wrapped_like, peg_like_mask, exclusion_mask, fetch_mexc_klines, compute_mexc_features, compute_feature_block, tag_segment | - |
 | `src/colabtool/breakout.py` | _mexc_klines, _valid_pair, _to_df, _pct_change, _rolling_max, _percentile_rank, _zscore, _beta, _features_from_klines, _prep_betas, compute_breakout_for_ids | - |
