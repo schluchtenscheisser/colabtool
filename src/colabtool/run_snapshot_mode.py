@@ -157,6 +157,8 @@ def run_snapshot(mode: str = "standard", offline: bool = False) -> Path:
 
         df = compute_feature_block(df)
         logging.info("✅ compute_feature_block abgeschlossen")
+        logging.info(f"🔍 Feature-Debug: Spalten nach compute_feature_block → {list(df.columns)}")
+        logging.info(f"🔍 Vorhandene Momentum-Werte: {df['mom_30d_pct'].notna().sum() if 'mom_30d_pct' in df.columns else 0}")
 
         cand_ids = df["id"].tolist()
         df = compute_breakout_for_ids(df, cand_ids)
