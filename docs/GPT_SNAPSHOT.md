@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 9c65a8b9c747ed87c1902cf95590b6022df1fd88_
+_Generated from commit: 92db7cbf260997f13fb4a1652f3ebab409ab3e69_
 
 ## pyproject.toml
 
@@ -2908,7 +2908,7 @@ def ensure_seed_alias_exists():
 
 ## src/colabtool/pre_universe.py
 
-SHA256: `a145707a38a35ee85e50b87cd9039bbd36fa09aa29efca84562c06989ce67a6e`
+SHA256: `b2fb6a01d2d5dbfd77ea5de50b0c4d4c3e674f44579513ff59794448715b5fef`
 
 ```python
 
@@ -2941,7 +2941,7 @@ def _is_leveraged(name: str, symbol: str) -> bool:
         return True
     return False
 
-def apply_pre_universe_filters(df_in: pd.DataFrame, min_volume_usd: float = 1_000_000.0) -> pd.DataFrame:
+def apply_pre_universe_filters(df_in: pd.DataFrame, min_volume_usd: float = 300_000.0) -> pd.DataFrame:
     """P1-Hard-Filter vor MEXC/Kategorien:
     - market_cap > 0
     - total_volume >= min_volume_usd
