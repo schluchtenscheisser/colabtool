@@ -28,7 +28,7 @@ def _is_leveraged(name: str, symbol: str) -> bool:
         return True
     return False
 
-def apply_pre_universe_filters(df_in: pd.DataFrame, min_volume_usd: float = 1_000_000.0) -> pd.DataFrame:
+def apply_pre_universe_filters(df_in: pd.DataFrame, min_volume_usd: float = 300_000.0) -> pd.DataFrame:
     """P1-Hard-Filter vor MEXC/Kategorien:
     - market_cap > 0
     - total_volume >= min_volume_usd
