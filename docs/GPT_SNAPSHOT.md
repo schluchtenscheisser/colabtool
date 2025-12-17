@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: ab2fea8f56ac3dd1b225ba4c236a7e01f240cc5a_
+_Generated from commit: 305b325fcbecf41925f0035b4c40fe38dbc5e7cc_
 
 ## pyproject.toml
 
@@ -597,7 +597,7 @@ if __name__ == "__main__":
 
 ## src/colabtool/run_snapshot_mode.py
 
-SHA256: `502f261efc22b952f07aadb9f29465c246930aa27ac7356db3e884f418f803f2`
+SHA256: `97a331e3b275388bacd2b1494b90dcaa4dc4b2ad6438f08d93a40f5f352fbe58`
 
 ```python
 """
@@ -718,8 +718,8 @@ def run_snapshot(mode: str = "standard", offline: bool = False) -> Path:
     #         },
     #     ])
     # else:
-        df = fetch_cmc_markets(pages=8, limit=250)
-        logging.info(f"✅ fetch_cmc_markets: {len(df)} Coins geladen, Columns: {list(df.columns)}")
+    df = fetch_cmc_markets(pages=8, limit=250)
+    logging.info(f"✅ fetch_cmc_markets: {len(df)} Coins geladen, Columns: {list(df.columns)}")
 
     # ------------------------------
     # 1b️⃣ MEXC Mapping (global, unabhängig vom Modus)
