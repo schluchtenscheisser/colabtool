@@ -1,15 +1,14 @@
-name: 🧠 Update & Check CODE_MAP
+name: 🤖 Auto-Update CODE_MAP on main commits
 
 on:
-  pull_request:
+  push:
     branches: [ main ]
 
 permissions:
   contents: write
-  pull-requests: write
 
 jobs:
-  check-codemap:
+  update-codemap:
     runs-on: ubuntu-latest
 
     steps:
@@ -31,16 +30,12 @@ jobs:
       - name: 🧩 Generate CODE_MAP.md
         run: python tools/update_codemap.py
 
-      - name: 🧮 Check for CODE_MAP changes
-        id: check
+      - name: 💾 Commit & Push changes if needed
         run: |
-          git diff --exit-code docs/CODE_MAP.md || echo "needs_update=true" >> $GITHUB_OUTPUT
-
-      - name: 💬 Comment on PR if CODE_MAP changed
-        if: steps.check.outputs.needs_update == 'true'
-        uses: marocchino/sticky-pull-request-comment@v2
-        with:
-          message: |
-            ⚠️ **CODE_MAP.md was automatically updated!**
-            A new commit may be required to include these changes.
-            Please pull the latest version or merge this update to keep documentation in sync.
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/CODE_MAP.md
+          git diff --quiet && echo "✅ CODE_MAP.md is up to date" || (
+            git commit -m "🤖 Auto-update CODE_MAP.md" &&
+            git push
+          )
