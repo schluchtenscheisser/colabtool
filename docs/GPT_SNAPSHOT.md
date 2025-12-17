@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: b8ba5dba7090804ef3b010caf086ce2f7ba1c9d1_
+_Generated from commit: ab2fea8f56ac3dd1b225ba4c236a7e01f240cc5a_
 
 ## pyproject.toml
 
@@ -597,7 +597,7 @@ if __name__ == "__main__":
 
 ## src/colabtool/run_snapshot_mode.py
 
-SHA256: `3d7f3a723ae92fd3130d08ac8869939ffafdae6c3cda395061e6f6891f276eea`
+SHA256: `502f261efc22b952f07aadb9f29465c246930aa27ac7356db3e884f418f803f2`
 
 ```python
 """
@@ -658,7 +658,7 @@ logging.basicConfig(
 # Hilfsfunktion: Score-Validierung
 # --------------------------------------------------
 def validate_scores(df: pd.DataFrame) -> None:
-    required_cols = ["score_global", "early_score"]
+    required_cols = ["early_score", "breakout_score"]
     missing = [c for c in required_cols if c not in df.columns]
     if missing:
         raise ValueError(f"⚠️ Fehlende Score-Spalten: {missing}")
@@ -695,29 +695,29 @@ def run_snapshot(mode: str = "standard", offline: bool = False) -> Path:
     # ------------------------------
     # 1️⃣ Universe laden (API oder Mock)
     # ------------------------------
-    if effective_mode == "offline":
-        logging.info("⚙️ OFFLINE-MODUS: Verwende synthetische Mock-Daten (kein API-Zugriff).")
-        df = pd.DataFrame([
-            {
-                "id": "alpha",
-                "symbol": "alp",
-                "market_cap": 200_000_000,
-                "total_volume": 5_000_000,
-                "current_price": 0.8,
-                "ath": 1.0,
-                "price_change_percentage_30d_in_currency": 25.0,
-            },
-            {
-                "id": "beta",
-                "symbol": "bet",
-                "market_cap": 350_000_000,
-                "total_volume": 12_000_000,
-                "current_price": 0.5,
-                "ath": 0.9,
-                "price_change_percentage_30d_in_currency": -5.0,
-            },
-        ])
-    else:
+    # if effective_mode == "offline":
+    #     logging.info("⚙️ OFFLINE-MODUS: Verwende synthetische Mock-Daten (kein API-Zugriff).")
+    #     df = pd.DataFrame([
+    #         {
+    #             "id": "alpha",
+    #             "symbol": "alp",
+    #             "market_cap": 200_000_000,
+    #             "total_volume": 5_000_000,
+    #             "current_price": 0.8,
+    #            "ath": 1.0,
+    #             "price_change_percentage_30d_in_currency": 25.0,
+    #         },
+    #         {
+    #             "id": "beta",
+    #             "symbol": "bet",
+    #             "market_cap": 350_000_000,
+    #             "total_volume": 12_000_000,
+    #             "current_price": 0.5,
+    #             "ath": 0.9,
+    #             "price_change_percentage_30d_in_currency": -5.0,
+    #         },
+    #     ])
+    # else:
         df = fetch_cmc_markets(pages=8, limit=250)
         logging.info(f"✅ fetch_cmc_markets: {len(df)} Coins geladen, Columns: {list(df.columns)}")
 
