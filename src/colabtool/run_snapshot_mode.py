@@ -131,7 +131,7 @@ def run_snapshot(mode: str = "standard", offline: bool = False) -> Path:
             logging.warning("[MEXC] ⚠️ Keine Treffer beim Mapping – prüfe API oder Symbolabgleich.")
         logging.info(f"[TRACE] map_mexc_pairs: {hits} gültige Paare, Beispiele: {df[['symbol','mexc_pair']].head(5).to_dict('records')}")
     except Exception as e:
-        logging.warning(f"[MEXC] ⚠️ Fehler beim Mapping: {e}")
+        logging.error(f"[MEXC] ❌ Fehler beim Mapping: {e}", exc_info=True)
 
     logging.info(f"[MEXC] 🔍 Vor Filterung: {df['mexc_pair'].notna().sum()} Coins mit MEXC-Paar")
 
