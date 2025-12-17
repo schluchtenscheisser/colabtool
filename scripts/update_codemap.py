@@ -21,19 +21,28 @@ HEADER = f"""# 📘 CODE_MAP.md – Automatisch generiert
 ---
 """
 
+
 def extract_module_info(file_path: Path):
-    """Analysiert ein Python-Modul mit AST."""
+    """Analysiert ein Python-Modul mit AST und extrahiert Funktionen, Klassen, Imports und Aufrufbeziehungen."""
     with open(file_path, "r", encoding="utf-8") as f:
         source = f.read()
     tree = ast.parse(source)
 
     functions, classes, imports, variables = [], [], [], []
     calls = defaultdict(set)
-
     current_function = None
     parent_stack = []
 
+    # Liste bekannter Builtins, die im Call Graph ausgefiltert werden
+    BUILTIN_FUNCS = {
+        "len", "print", "range", "type", "str", "int", "float", "list",
+        "dict", "set", "max", "min", "sum", "any", "all", "zip", "map",
+        "filter", "sorted", "enumerate", "open", "isinstance", "hasattr",
+        "getattr", "setattr", "abs", "round", "next", "iter"
+    }
+
     class CallVisitor(ast.NodeVisitor):
+        """AST-Visitor, der Funktionsaufrufe innerhalb anderer Funktionen erkennt."""
         def visit_FunctionDef(self, node):
             nonlocal current_function
             prev = current_function
@@ -44,22 +53,31 @@ def extract_module_info(file_path: Path):
             current_function = prev
 
         def visit_Call(self, node):
-            if current_function and isinstance(node.func, ast.Name):
-                calls[current_function].add(node.func.id)
-            elif current_function and isinstance(node.func, ast.Attribute):
-                calls[current_function].add(node.func.attr)
+            if current_function:
+                func_name = None
+                if isinstance(node.func, ast.Name):
+                    func_name = node.func.id
+                elif isinstance(node.func, ast.Attribute):
+                    func_name = node.func.attr
+
+                if func_name and func_name not in BUILTIN_FUNCS:
+                    calls[current_function].add(func_name)
             self.generic_visit(node)
 
+    # Call-Graph scannen
     CallVisitor().visit(tree)
 
+    # Funktions- und Moduldefinitionen auslesen
     for node in ast.walk(tree):
         if isinstance(node, ast.FunctionDef):
             functions.append(node.name)
         elif isinstance(node, ast.ClassDef):
             classes.append(node.name)
-        elif isinstance(node, (ast.Import, ast.ImportFrom)):
-            mod = node.module or ", ".join(n.name for n in node.names)
-            imports.append(mod)
+        elif isinstance(node, ast.ImportFrom):
+            if node.module:
+                imports.append(node.module)
+        elif isinstance(node, ast.Import):
+            imports.extend([n.name for n in node.names])
         elif isinstance(node, ast.Assign):
             for t in node.targets:
                 if isinstance(t, ast.Name) and not t.id.startswith("_"):
@@ -75,6 +93,7 @@ def extract_module_info(file_path: Path):
 
 
 def scan_repository():
+    """Durchläuft alle Python-Dateien und sammelt Metadaten."""
     modules = {}
     for py_file in SRC_DIR.rglob("*.py"):
         rel = py_file.relative_to(SRC_DIR)
@@ -83,6 +102,7 @@ def scan_repository():
 
 
 def build_codemap(modules):
+    """Erstellt die Markdown-Dokumentation mit Funktions- und Aufrufinformationen."""
     lines = [HEADER, "## 🧩 Modulübersicht\n"]
 
     for mod, info in sorted(modules.items()):
@@ -114,6 +134,7 @@ def build_codemap(modules):
 
 
 def write_codemap(content: str):
+    """Schreibt die generierte Dokumentation in docs/CODE_MAP.md."""
     DOC_PATH.parent.mkdir(exist_ok=True)
     with open(DOC_PATH, "w", encoding="utf-8") as f:
         f.write(content)
