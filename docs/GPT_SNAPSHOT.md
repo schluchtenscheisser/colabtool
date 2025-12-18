@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: ef34daa684c3c6908c662f63375c48ce472377e8_
+_Generated from commit: 732891fb473d1e7f7e5a88aed5ee3fb66d29e616_
 
 ## pyproject.toml
 
@@ -3781,7 +3781,7 @@ SHA256: `b5636b2d1ac4d48d53c195371b0e49a81b1d5eab175e38d5e5644e55b4e0df56`
 
 ## src/colabtool/_legacy/features_legacy.py
 
-SHA256: `73a506b1ef4d6b3813bbc4b5a42f9e16b65327cb4504a596bad2ec5815b4f898`
+SHA256: `df8868eb2992ce0827267734ab68154cb70417754fa907f5cb96ab84c06ced2d`
 
 ```python
 """
@@ -3800,7 +3800,7 @@ Logik vor der Modularisierung (Dezember 2025).
 
 Diese Datei wird nicht mehr importiert oder ausgeführt.
 Sie bleibt nur zur Dokumentation und für historische Vergleiche
-bestehen.
+bestehen. 
 ==============================================================
 """
 
