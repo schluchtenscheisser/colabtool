@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: d24183ef9577b1261d63ce464941d45b67195027_
+_Generated from commit: f96c717b28c4f8d12d1ac36b6b06982b7f90bcf8_
 
 ## pyproject.toml
 
@@ -4073,6 +4073,86 @@ SHA256: `b5636b2d1ac4d48d53c195371b0e49a81b1d5eab175e38d5e5644e55b4e0df56`
 
 ```
 
+## src/colabtool/features/token_utils.py
+
+SHA256: `94f39296b528a3050bcf0e3856b8c9172b9446549677727268114d3aeb3cb293`
+
+```python
+"""
+token_utils.py
+--------------
+Hilfsfunktionen zur Erkennung von Stablecoins, Wrapped Tokens und Pegged Assets.
+Diese Logik stammt ursprünglich aus der alten features.py und wird hier
+zentralisiert, um die Architektur klarer zu trennen.
+
+Verwendung:
+    from colabtool.features.token_utils import is_stable_like, is_wrapped_like, peg_like_mask
+"""
+
+import re
+from typing import Union
+
+# -------------------------------------------------------------------
+# 🪙 Stablecoin-Erkennung
+# -------------------------------------------------------------------
+def is_stable_like(symbol: Union[str, None]) -> bool:
+    """
+    Prüft, ob ein Symbol einem Stablecoin entspricht.
+    Beispiele: USDT, USDC, BUSD, DAI, TUSD, FDUSD, LUSD, PYUSD
+
+    Args:
+        symbol: Token-Symbol (z. B. 'USDT')
+
+    Returns:
+        bool: True, wenn es sich um ein Stablecoin-Symbol handelt.
+    """
+    if not isinstance(symbol, str) or not symbol:
+        return False
+    pattern = r"(USDT|USDC|BUSD|DAI|TUSD|FDUSD|LUSD|PYUSD|USD$)"
+    return bool(re.search(pattern, symbol.upper()))
+
+
+# -------------------------------------------------------------------
+# 🪙 Wrapped Token-Erkennung
+# -------------------------------------------------------------------
+def is_wrapped_like(symbol: Union[str, None]) -> bool:
+    """
+    Prüft, ob ein Token ein Wrapped-Asset ist.
+    Beispiele: WBTC, WETH, WWDOGE, WRAPPEDBTC
+
+    Args:
+        symbol: Token-Symbol (z. B. 'WBTC')
+
+    Returns:
+        bool: True, wenn das Symbol auf ein Wrapped-Asset hindeutet.
+    """
+    if not isinstance(symbol, str) or not symbol:
+        return False
+    pattern = r"^(W|WB|WW|WRAPPED)"
+    return bool(re.match(pattern, symbol.upper()))
+
+
+# -------------------------------------------------------------------
+# 🪙 Pegged Asset-Erkennung
+# -------------------------------------------------------------------
+def peg_like_mask(symbol: Union[str, None]) -> bool:
+    """
+    Prüft, ob ein Token an eine Fiatwährung oder ein Rohstoff-Asset gekoppelt ist.
+    Beispiele: EURT, XAUT, SUSD, CUSD, GUSD, PEG-Token
+
+    Args:
+        symbol: Token-Symbol (z. B. 'EURT')
+
+    Returns:
+        bool: True, wenn das Symbol auf ein Pegged Asset hinweist.
+    """
+    if not isinstance(symbol, str) or not symbol:
+        return False
+    pattern = r"(EUR|GBP|XAU|XAG|CUSD|GUSD|SUSD|PEG)"
+    return bool(re.search(pattern, symbol.upper()))
+
+```
+
 ## src/colabtool/features/compute_mexc_features.py
 
 SHA256: `a1e571fab8804bc99add925910b2b13463d21ab2547cf959fcd3156aa7d1ebef`
@@ -6546,6 +6626,7 @@ except Exception:
 | `src/colabtool/__init__.py` | - | - |
 | `src/colabtool/utils/validation.py` | ensure_schema, validate_required_columns, validate_nonempty | - |
 | `src/colabtool/utils/__init__.py` | - | - |
+| `src/colabtool/features/token_utils.py` | is_stable_like, is_wrapped_like, peg_like_mask | - |
 | `src/colabtool/features/compute_mexc_features.py` | compute_mexc_features | - |
 | `src/colabtool/features/fetch_mexc_klines.py` | fetch_mexc_klines | - |
 | `src/colabtool/features/feature_block.py` | compute_feature_block | - |
