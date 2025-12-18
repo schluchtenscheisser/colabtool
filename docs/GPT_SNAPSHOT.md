@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 3e592aab99096b4df8211d496f08d973163bc8cc_
+_Generated from commit: c51dc2d1ad14d138417a6ac6d421406d16737b4a_
 
 ## pyproject.toml
 
@@ -3781,9 +3781,29 @@ SHA256: `b5636b2d1ac4d48d53c195371b0e49a81b1d5eab175e38d5e5644e55b4e0df56`
 
 ## src/colabtool/_legacy/features_legacy.py
 
-SHA256: `eb9e4943fcaf2c401bb5e128e8d2189c8682eaf0a240e53087414137ae2d7e69`
+SHA256: `73a506b1ef4d6b3813bbc4b5a42f9e16b65327cb4504a596bad2ec5815b4f898`
 
 ```python
+"""
+==============================================================
+🚨 DEPRECATED MODULE: features_legacy.py
+--------------------------------------------------------------
+Diese Datei enthält die ursprüngliche, monolithische Feature-
+Logik vor der Modularisierung (Dezember 2025).
+
+→ Neue Architektur:
+   src/colabtool/features/
+      ├── fetch_mexc_klines.py
+      ├── compute_mexc_features.py
+      ├── feature_block.py
+      └── token_utils.py
+
+Diese Datei wird nicht mehr importiert oder ausgeführt.
+Sie bleibt nur zur Dokumentation und für historische Vergleiche
+bestehen.
+==============================================================
+"""
+
 # modules/features.py
 from __future__ import annotations
 
