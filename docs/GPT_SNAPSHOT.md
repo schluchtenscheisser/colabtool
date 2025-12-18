@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: f96c717b28c4f8d12d1ac36b6b06982b7f90bcf8_
+_Generated from commit: ea56f2c9bdd5df62c9097cfd1c21f6bcfcf06825_
 
 ## pyproject.toml
 
@@ -4477,20 +4477,20 @@ def compute_feature_block(df_in: pd.DataFrame) -> pd.DataFrame:
 
 ## src/colabtool/features/__init__.py
 
-SHA256: `71ab952b0523ffcf24b9479b11dd1cbfc915f02a6c9500cd8ccaf160dde04e6a`
+SHA256: `4e38e926a4fc116fa0400c516d95969eb62cb86f27a3060984e0197d16d660aa`
 
 ```python
 """
 __init__.py
 -----------
-Bündelt alle Feature-Module und stellt Abwärtskompatibilität zur alten Struktur her.
+Zentrale Export-Schnittstelle für das Modul `colabtool.features`.
+Bündelt alle Submodule und erhält Abwärtskompatibilität zur alten Struktur.
 """
 
 from .feature_block import compute_feature_block
 from .fetch_mexc_klines import fetch_mexc_klines
 from .compute_mexc_features import compute_mexc_features
-
-import re
+from .token_utils import is_stable_like, is_wrapped_like, peg_like_mask
 
 __all__ = [
     "compute_feature_block",
@@ -4500,40 +4500,6 @@ __all__ = [
     "is_wrapped_like",
     "peg_like_mask",
 ]
-
-# -------------------------------------------------------------------
-# 🧩 Alte Helper-Funktionen aus dem früheren features.py
-# -------------------------------------------------------------------
-def is_stable_like(symbol: str) -> bool:
-    """
-    Prüft, ob ein Coin ein Stablecoin ist.
-    Beispiele: USDT, USDC, BUSD, DAI, TUSD
-    """
-    if not isinstance(symbol, str):
-        return False
-    pattern = r"(USDT|USDC|BUSD|DAI|TUSD|FDUSD|LUSD|USD$)"
-    return bool(re.search(pattern, symbol.upper()))
-
-
-def is_wrapped_like(symbol: str) -> bool:
-    """
-    Prüft, ob ein Token ein 'Wrapped'-Token ist (z. B. WBTC, WETH).
-    """
-    if not isinstance(symbol, str):
-        return False
-    pattern = r"^(W|WB|WW|WRAPPED)"
-    return bool(re.match(pattern, symbol.upper()))
-
-
-def peg_like_mask(symbol: str) -> bool:
-    """
-    Prüft, ob ein Coin an eine andere Währung oder Asset-Klasse 'gepegt' ist.
-    Beispiele: EURT, XAUT, SUSD, CUSD, GUSD
-    """
-    if not isinstance(symbol, str):
-        return False
-    pattern = r"(EUR|GBP|XAU|XAG|CUSD|GUSD|SUSD|PEG)"
-    return bool(re.search(pattern, symbol.upper()))
 
 ```
 
@@ -6630,4 +6596,4 @@ except Exception:
 | `src/colabtool/features/compute_mexc_features.py` | compute_mexc_features | - |
 | `src/colabtool/features/fetch_mexc_klines.py` | fetch_mexc_klines | - |
 | `src/colabtool/features/feature_block.py` | compute_feature_block | - |
-| `src/colabtool/features/__init__.py` | is_stable_like, is_wrapped_like, peg_like_mask | - |
+| `src/colabtool/features/__init__.py` | - | - |
