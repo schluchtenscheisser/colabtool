@@ -91,3 +91,33 @@ def compute_mexc_features(df: pd.DataFrame) -> Dict[str, float]:
             "ath_drawdown_pct": np.nan,
             "ath_date": np.nan,
         }
+
+
+# ============================================================================
+# 🧩 Interne Helper-Funktionen (aus legacy features.py übernommen)
+# ============================================================================
+
+import pandas as pd
+import numpy as np
+
+def _ensure_series(x, index):
+    """Stellt sicher, dass Eingaben als pandas.Series vorliegen."""
+    if isinstance(x, pd.Series):
+        return x
+    if isinstance(x, (list, np.ndarray)):
+        return pd.Series(x, index=index[:len(x)])
+    return pd.Series([x] * len(index), index=index)
+
+def _num_series(df: pd.DataFrame, cols, default=np.nan):
+    """Konvertiert angegebene Spalten sicher in numerische Werte."""
+    if isinstance(cols, str):
+        cols = [cols]
+    for c in cols:
+        if c not in df.columns:
+            df[c] = default
+        df[c] = pd.to_numeric(df[c], errors="coerce").fillna(default)
+    return df
+
+def _lc(x):
+    """Kleinschreib-Helfer (lowercase für Strings)."""
+    return str(x).lower().strip() if isinstance(x, str) else x
