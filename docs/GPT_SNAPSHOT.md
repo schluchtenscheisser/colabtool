@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: ea56f2c9bdd5df62c9097cfd1c21f6bcfcf06825_
+_Generated from commit: 529fb12e13ab81df9907f835a10b3863be12be10_
 
 ## pyproject.toml
 
@@ -274,25 +274,41 @@ Es stellt **keine Finanzberatung** dar. Nutzung auf eigenes Risiko.
 
 ## .github/workflows/ci.yml
 
-SHA256: `d267365c5a5e20f752a0b83b81fc8f327e08ea87b06b123bdcaf9b8fee679cb4`
+SHA256: `de2ef1b28cb36d80e7a02f440625117228502b4ed1d23d5a08746dd4840f7c87`
 
 ```yaml
 name: ci
+
 on:
   push:
   pull_request:
+
 jobs:
   test:
     runs-on: ubuntu-latest
+
+    env:
+      PYTHONPATH: ./src   # 🔥 sorgt dafür, dass 'colabtool' korrekt importiert wird
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
-      - run: pip install -U pip
-      - run: pip install -e .
-      - run: pip install -U pytest
-      - run: pytest -q
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -e .        # editable install, damit src/ erkannt wird
+          pip install pytest
+
+      - name: Run Tests
+        run: |
+          pytest -q --disable-warnings
 
 ```
 
