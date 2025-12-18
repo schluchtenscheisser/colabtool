@@ -44,6 +44,11 @@ jobs:
           else
             echo "📝 Changes detected — committing update..."
             git commit -m "🤖 Auto-update CODE_MAP.md"
-            git push
+            echo "📥 Fetching latest main branch..."
+            git fetch origin main
+            echo "🔄 Rebasing local changes onto latest main..."
+            git rebase origin/main || git rebase --skip
+            echo "🚀 Pushing updated CODE_MAP.md..."
+            git push origin HEAD:main
             echo "✅ CODE_MAP.md successfully pushed to main"
           fi
