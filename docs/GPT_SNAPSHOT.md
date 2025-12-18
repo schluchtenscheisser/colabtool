@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 39d5c5298587888c114eeedcdbb4e2928c469440_
+_Generated from commit: d24183ef9577b1261d63ce464941d45b67195027_
 
 ## pyproject.toml
 
@@ -4397,19 +4397,63 @@ def compute_feature_block(df_in: pd.DataFrame) -> pd.DataFrame:
 
 ## src/colabtool/features/__init__.py
 
-SHA256: `73d1ea5e60d031cf95e909935d045ff9407ffdb62161c3c4a8e0c6aae69e0759`
+SHA256: `71ab952b0523ffcf24b9479b11dd1cbfc915f02a6c9500cd8ccaf160dde04e6a`
 
 ```python
-# src/colabtool/features/__init__.py
+"""
+__init__.py
+-----------
+Bündelt alle Feature-Module und stellt Abwärtskompatibilität zur alten Struktur her.
+"""
+
 from .feature_block import compute_feature_block
 from .fetch_mexc_klines import fetch_mexc_klines
 from .compute_mexc_features import compute_mexc_features
+
+import re
 
 __all__ = [
     "compute_feature_block",
     "fetch_mexc_klines",
     "compute_mexc_features",
+    "is_stable_like",
+    "is_wrapped_like",
+    "peg_like_mask",
 ]
+
+# -------------------------------------------------------------------
+# 🧩 Alte Helper-Funktionen aus dem früheren features.py
+# -------------------------------------------------------------------
+def is_stable_like(symbol: str) -> bool:
+    """
+    Prüft, ob ein Coin ein Stablecoin ist.
+    Beispiele: USDT, USDC, BUSD, DAI, TUSD
+    """
+    if not isinstance(symbol, str):
+        return False
+    pattern = r"(USDT|USDC|BUSD|DAI|TUSD|FDUSD|LUSD|USD$)"
+    return bool(re.search(pattern, symbol.upper()))
+
+
+def is_wrapped_like(symbol: str) -> bool:
+    """
+    Prüft, ob ein Token ein 'Wrapped'-Token ist (z. B. WBTC, WETH).
+    """
+    if not isinstance(symbol, str):
+        return False
+    pattern = r"^(W|WB|WW|WRAPPED)"
+    return bool(re.match(pattern, symbol.upper()))
+
+
+def peg_like_mask(symbol: str) -> bool:
+    """
+    Prüft, ob ein Coin an eine andere Währung oder Asset-Klasse 'gepegt' ist.
+    Beispiele: EURT, XAUT, SUSD, CUSD, GUSD
+    """
+    if not isinstance(symbol, str):
+        return False
+    pattern = r"(EUR|GBP|XAU|XAG|CUSD|GUSD|SUSD|PEG)"
+    return bool(re.search(pattern, symbol.upper()))
 
 ```
 
@@ -6505,4 +6549,4 @@ except Exception:
 | `src/colabtool/features/compute_mexc_features.py` | compute_mexc_features | - |
 | `src/colabtool/features/fetch_mexc_klines.py` | fetch_mexc_klines | - |
 | `src/colabtool/features/feature_block.py` | compute_feature_block | - |
-| `src/colabtool/features/__init__.py` | - | - |
+| `src/colabtool/features/__init__.py` | is_stable_like, is_wrapped_like, peg_like_mask | - |
