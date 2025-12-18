@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 835545cff642df9326750e0cc8d87e7b13f83a56_
+_Generated from commit: af6147be999c86a8484b4409378602953ddfef0a_
 
 ## pyproject.toml
 
@@ -4091,7 +4091,7 @@ SHA256: `b5636b2d1ac4d48d53c195371b0e49a81b1d5eab175e38d5e5644e55b4e0df56`
 
 ## src/colabtool/features/token_utils.py
 
-SHA256: `94f39296b528a3050bcf0e3856b8c9172b9446549677727268114d3aeb3cb293`
+SHA256: `29a6f7e0bba7c828fcd7b578e5ee1d652aef6a1095e724167e640da538eb3c6c`
 
 ```python
 """
@@ -4166,6 +4166,45 @@ def peg_like_mask(symbol: Union[str, None]) -> bool:
         return False
     pattern = r"(EUR|GBP|XAU|XAG|CUSD|GUSD|SUSD|PEG)"
     return bool(re.search(pattern, symbol.upper()))
+
+
+# ============================================================================
+# 🧩 Erweiterte Klassifizierungsfunktionen (aus legacy features.py übernommen)
+# ============================================================================
+
+import pandas as pd
+
+def exclusion_mask(df: pd.DataFrame, cats: pd.Series) -> pd.Series:
+    """
+    Erzeugt eine Maske für den Ausschluss bestimmter Kategorien.
+    Stable-, Wrapped-, PEG- und Leverage-Coins werden ausgeschlossen.
+    """
+    if 'category' not in df.columns:
+        return pd.Series(False, index=df.index)
+    cat_lower = cats.str.lower()
+    return cat_lower.str.contains('stable|wrapped|peg|leverage|index|tokenized', regex=True, na=False)
+
+
+def tag_segment(row: dict) -> str:
+    """
+    Weist einem Coin eine logische Segment-Kategorie zu.
+    (z. B. 'stable', 'wrapped', 'meme', 'core', 'defi', etc.)
+    """
+    name = str(row.get("name", "")).lower()
+    symbol = str(row.get("symbol", "")).lower()
+    slug = str(row.get("slug", "")).lower()
+
+    if any(k in symbol for k in ["usd", "usdt", "usdc", "busd", "eur"]):
+        return "stable"
+    if any(k in symbol for k in ["wbtc", "weth", "wrapped"]):
+        return "wrapped"
+    if any(k in slug for k in ["meme", "doge", "shib", "floki"]):
+        return "meme"
+    if any(k in slug for k in ["defi", "dex", "swap", "finance"]):
+        return "defi"
+    if any(k in slug for k in ["eth", "btc", "sol", "avax", "dot"]):
+        return "core"
+    return "other"
 
 ```
 
@@ -6638,7 +6677,7 @@ except Exception:
 | `src/colabtool/__init__.py` | - | - |
 | `src/colabtool/utils/validation.py` | ensure_schema, validate_required_columns, validate_nonempty | - |
 | `src/colabtool/utils/__init__.py` | - | - |
-| `src/colabtool/features/token_utils.py` | is_stable_like, is_wrapped_like, peg_like_mask | - |
+| `src/colabtool/features/token_utils.py` | is_stable_like, is_wrapped_like, peg_like_mask, exclusion_mask, tag_segment | - |
 | `src/colabtool/features/compute_mexc_features.py` | compute_mexc_features, _ensure_series, _num_series, _lc | - |
 | `src/colabtool/features/fetch_mexc_klines.py` | fetch_mexc_klines | - |
 | `src/colabtool/features/feature_block.py` | compute_feature_block | - |
