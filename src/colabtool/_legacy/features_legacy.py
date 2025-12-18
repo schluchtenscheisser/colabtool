@@ -14,7 +14,7 @@ Logik vor der Modularisierung (Dezember 2025).
 
 Diese Datei wird nicht mehr importiert oder ausgeführt.
 Sie bleibt nur zur Dokumentation und für historische Vergleiche
-bestehen.
+bestehen. 
 ==============================================================
 """
 
