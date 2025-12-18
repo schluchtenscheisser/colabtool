@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: 529fb12e13ab81df9907f835a10b3863be12be10_
+_Generated from commit: 835545cff642df9326750e0cc8d87e7b13f83a56_
 
 ## pyproject.toml
 
@@ -4171,7 +4171,7 @@ def peg_like_mask(symbol: Union[str, None]) -> bool:
 
 ## src/colabtool/features/compute_mexc_features.py
 
-SHA256: `a1e571fab8804bc99add925910b2b13463d21ab2547cf959fcd3156aa7d1ebef`
+SHA256: `8afe15dcf884b35978970dd4a5cf97f2e5fa65b8cc63913dc246580ac7731018`
 
 ```python
 """
@@ -4267,6 +4267,36 @@ def compute_mexc_features(df: pd.DataFrame) -> Dict[str, float]:
             "ath_drawdown_pct": np.nan,
             "ath_date": np.nan,
         }
+
+
+# ============================================================================
+# 🧩 Interne Helper-Funktionen (aus legacy features.py übernommen)
+# ============================================================================
+
+import pandas as pd
+import numpy as np
+
+def _ensure_series(x, index):
+    """Stellt sicher, dass Eingaben als pandas.Series vorliegen."""
+    if isinstance(x, pd.Series):
+        return x
+    if isinstance(x, (list, np.ndarray)):
+        return pd.Series(x, index=index[:len(x)])
+    return pd.Series([x] * len(index), index=index)
+
+def _num_series(df: pd.DataFrame, cols, default=np.nan):
+    """Konvertiert angegebene Spalten sicher in numerische Werte."""
+    if isinstance(cols, str):
+        cols = [cols]
+    for c in cols:
+        if c not in df.columns:
+            df[c] = default
+        df[c] = pd.to_numeric(df[c], errors="coerce").fillna(default)
+    return df
+
+def _lc(x):
+    """Kleinschreib-Helfer (lowercase für Strings)."""
+    return str(x).lower().strip() if isinstance(x, str) else x
 
 ```
 
@@ -6609,7 +6639,7 @@ except Exception:
 | `src/colabtool/utils/validation.py` | ensure_schema, validate_required_columns, validate_nonempty | - |
 | `src/colabtool/utils/__init__.py` | - | - |
 | `src/colabtool/features/token_utils.py` | is_stable_like, is_wrapped_like, peg_like_mask | - |
-| `src/colabtool/features/compute_mexc_features.py` | compute_mexc_features | - |
+| `src/colabtool/features/compute_mexc_features.py` | compute_mexc_features, _ensure_series, _num_series, _lc | - |
 | `src/colabtool/features/fetch_mexc_klines.py` | fetch_mexc_klines | - |
 | `src/colabtool/features/feature_block.py` | compute_feature_block | - |
 | `src/colabtool/features/__init__.py` | - | - |
