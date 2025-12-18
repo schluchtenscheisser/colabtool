@@ -1,3 +1,23 @@
+"""
+==============================================================
+🚨 DEPRECATED MODULE: features_legacy.py
+--------------------------------------------------------------
+Diese Datei enthält die ursprüngliche, monolithische Feature-
+Logik vor der Modularisierung (Dezember 2025).
+
+→ Neue Architektur:
+   src/colabtool/features/
+      ├── fetch_mexc_klines.py
+      ├── compute_mexc_features.py
+      ├── feature_block.py
+      └── token_utils.py
+
+Diese Datei wird nicht mehr importiert oder ausgeführt.
+Sie bleibt nur zur Dokumentation und für historische Vergleiche
+bestehen.
+==============================================================
+"""
+
 # modules/features.py
 from __future__ import annotations
 
