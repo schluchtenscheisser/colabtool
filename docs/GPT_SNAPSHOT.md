@@ -1,6 +1,6 @@
 # colabtool • GPT snapshot
 
-_Generated from commit: b1f1f1809b8a8a8a92cf9165cb07b926967717f0_
+_Generated from commit: 875d7116f8b1bd53712523653d842d00dda386dd_
 
 ## pyproject.toml
 
@@ -52,7 +52,7 @@ python-dotenv>=1.0.0
 
 ## README.md
 
-SHA256: `c8b861e7fba26ae282ef0e167f7638f5761ec299a82d4b242238b92a69d32db6`
+SHA256: `382e7f272d5c7f9b46b091826bb29099c5879049e01451a91a4642e8b9fea0f5`
 
 ```markdown
 
@@ -78,6 +78,7 @@ Fokus: Mid-Caps, Volumenbeschleunigung, Breakout-Nähe und Buzz-Aktivität.
 Das Tool analysiert Altcoin-Marktdaten (CoinMarketCap, MEXC, DeFiLlama, CryptoPanic)  
 und erkennt potenzielle „Hidden Gems“ oder Comebacks anhand von  
 Momentum, Volumenbeschleunigung, Breakout-Distanz und Buzz-Dynamik.
+Wichtig: Das Tool dient nur zu Research-Zwecken und stellt keine Anlageberatung dar!
 
 ---
 
