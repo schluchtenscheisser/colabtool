@@ -21,6 +21,7 @@ Fokus: Mid-Caps, Volumenbeschleunigung, Breakout-Nähe und Buzz-Aktivität.
 Das Tool analysiert Altcoin-Marktdaten (CoinMarketCap, MEXC, DeFiLlama, CryptoPanic)  
 und erkennt potenzielle „Hidden Gems“ oder Comebacks anhand von  
 Momentum, Volumenbeschleunigung, Breakout-Distanz und Buzz-Dynamik.
+Wichtig: Das Tool dient nur zu Research-Zwecken und stellt keine Anlageberatung dar!
 
 ---
 
