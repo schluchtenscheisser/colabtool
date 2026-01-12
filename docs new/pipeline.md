@@ -340,39 +340,39 @@ Core architecture must not require rewrite to add extensions.
       [MEXC Symbols]
              |
              v
-      [Tradeable USDT Universe]
+    [Tradeable USDT Universe]
              |
              v
-      [Market Cap Bulk Fetch]
+    [Market Cap Bulk Fetch]
              |
              v
-       [Mapping Layer]
+     [Mapping Layer]
              |
              v
-     [Filter Gate (hard)]
+    [Filter Gate (hard)]
              |
              v
-   [Cheap Pass (shortlist)]
+    [Cheap Pass (shortlist)]
              |
              v
-[OHLCV Fetch (1d + 4h only)]
+    [OHLCV Fetch (1d + 4h only)]
              |
              v
-   [Feature Computation]
+    [Feature Computation]
              |
              v
-  +-----------+------------+
-  |           |            |
-  v           v            v
-[Breakout] [Pullback] [Reversal]
-| | |
-+-----------+------------+
-|
-v
-[Report + JSON]
-|
-v
-[Snapshot]
-|
-v
-[Backtest]
+    +-----------+------------+
+    |           |            |
+    v           v            v
+    [Breakout] [Pullback] [Reversal]
+    |           |            |
+    +-----------+------------+
+                |
+                v
+          [Report + JSON]
+                |
+                v
+           [Snapshot]
+                |
+                v
+            [Backtest]
