@@ -368,17 +368,17 @@ Core architecture must not require rewrite to add extensions.
   |           |            |
   v           v            v
 [Breakout] [Pullback] [Reversal]
-     |         |         |
-     +-----------+--------+
-                 |
-                 v
-          [Report + JSON]
-                 |
-                 v
-              [Snapshot]
-                 |
-                 v
-              [Backtest]
+  |           |            |
+  +-----------+------------+
+              |
+              v
+       [Report + JSON]
+              |
+              v
+          [Snapshot]
+              |
+              v
+          [Backtest]
 ```
 
 ---
