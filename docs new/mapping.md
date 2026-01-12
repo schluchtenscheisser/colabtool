@@ -1,7 +1,7 @@
-# Mapping Layer Specification  
+# Mapping Layer Specification
 Version: v1.0  
 Language: English  
-Audience: Developer + GPT  
+Audience: Developer + GPT
 
 ---
 
@@ -49,8 +49,9 @@ Market cap assets define **valuation filters**.
 
 Mapping is a function:
 
+```
 MEXC.base_asset → CMC.asset
-
+```
 
 Output:
 - target CMC asset or null (no match)
@@ -70,31 +71,39 @@ This relationship must be:
 The mapping uses layered strategies:
 
 ### 4.1 Strategy S1: Symbol Exact Match
+
 Example:
 
+```
 base_asset = "H"
 CMC.symbol = "H"
-
+```
 
 Success only if:
 - symbol match is 1:1
 - no collisions (multiple CMC assets with same symbol)
 
 ### 4.2 Strategy S2: Normalized Symbol Match
+
 Normalize:
 - uppercase
 - whitespace strip
 - suffix strip (optional)
 - case-insensitive compare
 
-E.g.:
-"MPLX" == "mplx"
+Example:
 
+```
+"MPLX" == "mplx"
+```
 
 ### 4.3 Strategy S3: Override Table
-Manual mapping via file:
-mapping_overrides.json
 
+Manual mapping via file:
+
+```
+mapping_overrides.json
+```
 
 Useful for:
 - collisions
@@ -103,6 +112,7 @@ Useful for:
 - renamed assets
 
 ### 4.4 Strategy S4: Disable / Exclusion
+
 If no reliable mapping exists:
 - asset excluded from pipeline
 
@@ -111,11 +121,16 @@ If no reliable mapping exists:
 ## 5. Collisions
 
 A **collision** occurs if:
+
+```
 N > 1 CMC assets match base_asset
+```
 
 Example:
-"MPLX" → [AssetA, AssetB]
 
+```
+"MPLX" → [AssetA, AssetB]
+```
 
 System must:
 1. detect collision
@@ -140,14 +155,20 @@ Mapping must assign confidence:
 | none | no mapping, asset ignored |
 
 Configuration may enforce:
+
+```
 require_high_confidence = true
+```
 
 ---
 
 ## 7. Override File
 
 Override file format:
+
+```
 mapping_overrides.json
+```
 
 Example shape:
 ```json
@@ -159,8 +180,8 @@ Example shape:
   }
 }
 ```
-Overrides must support:
 
+Overrides must support:
 - resolution to CMC id
 - metadata for audit
 - notes for future review
@@ -171,9 +192,9 @@ Overrides must support:
 
 Mapping module must generate:
 
-1. collision_report.csv
-2. missing_mapping_report.csv
-3. override_report.csv
+- collision_report.csv
+- missing_mapping_report.csv
+- override_report.csv
 
 These are crucial for debugging, review, and iterative improvement.
 
@@ -181,12 +202,17 @@ These are crucial for debugging, review, and iterative improvement.
 
 ## 9. Mapping Effect on Filtering
 
-Mapping occurs *before* filters because:
+Mapping occurs before filters because:
+
 - market cap filter depends on mapping
 - tradeability filter depends on MEXC alone
 
 Flow:
+
+```
 MEXC → Mapping → MarketCap → Filtering
+```
+
 Assets without valid market cap are excluded.
 
 ---
@@ -194,6 +220,7 @@ Assets without valid market cap are excluded.
 ## 10. Determinism
 
 Mapping must be consistent across runs for:
+
 - reproducible outputs
 - backtests
 - snapshot compatibility
@@ -205,6 +232,7 @@ Overrides must be version-controlled.
 ## 11. Anti-Goals (Common Pitfalls)
 
 The mapping layer must not:
+
 - perform fuzzy matching (string similarity)
 - guess mappings automatically
 - match on name fields exclusively
@@ -219,6 +247,7 @@ These behaviors lead to silent corruption of outputs.
 ## 12. Testing Criteria
 
 A mapping implementation is valid if:
+
 - same input → same output
 - collisions correctly surfaced
 - overrides correctly applied
@@ -233,16 +262,22 @@ Snapshot-based tests can verify stability.
 ## 13. Integration Points
 
 Mapping feeds:
+
 - Filter Gate (market cap)
 - Feature Engine (OHLCV context)
 - Scoring (valuation-based penalties optional future)
 - Backtests (deterministic asset IDs)
-- Mapping does not interact with setup scoring logic directly.
+
+Mapping does not interact with setup scoring logic directly.
 
 ---
 
 ## 14. Summary
 
-Mapping is a foundational component.
-Tradeability + valuation must both pass.
+Mapping is a foundational component.  
+Tradeability + valuation must both pass.  
 Failures must be explicit, not silent.
+
+---
+
+## End of `mapping.md`
