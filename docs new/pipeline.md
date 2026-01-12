@@ -340,7 +340,7 @@ Core architecture must not require rewrite to add extensions.
       [MEXC Symbols]
              |
              v
-  [Tradeable USDT Universe]
+             [Tradeable USDT Universe]
              |
              v
    [Market Cap Bulk Fetch]
