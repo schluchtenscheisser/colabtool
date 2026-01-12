@@ -1,39 +1,41 @@
-# Scanner Configuration Specification
-
-**Spec Version:** v1.0  
-**Audience:** Developers + GPT  
-**Purpose:** Defines the deterministic and versioned configuration model used by the scanner.
+# Configuration Specification
+Version: v1.0  
+Language: English  
+Audience: Developer + GPT
 
 ---
 
-## Overview
+## 1. Purpose
 
-The configuration controls:
+This document specifies the configurable parameters for the scanner.  
+Configuration controls:
 
 - pipeline behavior
-- thresholds & lookbacks
-- penalties & scoring weights
+- thresholds
+- lookbacks
+- penalties
+- scoring weights
 - run modes
 - data source usage
 
-Configuration must be:
+Config must be:
 
 - explicit
 - deterministic
 - versioned
 - snapshot-captured
 
-Changes **impact backtest compatibility** and must increment version numbers.
+Config changes **affect backtest compatibility** and therefore must increment version.
 
 ---
 
-## Configuration Model
+## 2. Configuration Model
 
-Primary sources:
+Configuration is stored as:
 
-1. `config.yml` (main config)
-2. Environment variables (override)
-3. CLI arguments (optional)
+- `config.yml` (primary)
+- environment variables (overrides)
+- CLI arguments (optional, secondary)
 
 Priority:
 
@@ -43,7 +45,9 @@ CLI > ENV > config.yml
 
 ---
 
-## Structure (Recommended)
+## 3. Configuration Sections
+
+Recommended structure:
 
 ```
 general:
@@ -59,13 +63,11 @@ logging:
 
 ---
 
-## Sections
-
-### General
+## 4. General
 
 ```yaml
 general:
-  run_mode: "standard"   # standard|fast|offline|backtest
+  run_mode: "standard" # "standard", "fast", "offline", "backtest"
   timezone: "UTC"
   shortlist_size: 100
   lookback_days_1d: 120
@@ -74,7 +76,7 @@ general:
 
 ---
 
-### Data Sources
+## 5. Data Sources
 
 ```yaml
 data_sources:
@@ -90,17 +92,17 @@ data_sources:
     bulk_limit: 5000
 ```
 
-Rate limits should be static per provider.
+Rate limit configuration should be static per provider.
 
 ---
 
-### Universe Filters
+## 6. Universe Filters
 
 ```yaml
 universe_filters:
   market_cap:
-    min_usd: 100000000     # 100M
-    max_usd: 3000000000    # 3B
+    min_usd: 100000000 # 100M
+    max_usd: 3000000000 # 3B
   volume:
     min_quote_volume_24h: 1000000
   history:
@@ -110,7 +112,7 @@ universe_filters:
 
 ---
 
-### Exclusions
+## 7. Exclusions
 
 ```yaml
 exclusions:
@@ -124,26 +126,36 @@ exclusions:
   leveraged_patterns: ["UP", "DOWN", "BULL", "BEAR", "3L", "3S"]
 ```
 
+Pattern rules avoid false positives.
+
 ---
 
-### Mapping
+## 8. Mapping
 
 ```yaml
 mapping:
   require_high_confidence: false
   overrides_file: "config/mapping_overrides.json"
   collisions_report_file: "reports/mapping_collisions.csv"
-  unmapped_behavior: "filter"   # or "warn"
+  unmapped_behavior: "filter" # or "warn"
 ```
+
+Mapping stability is crucial for reproducibility.
 
 ---
 
-### Features
+## 9. Features
 
 ```yaml
 features:
-  timeframes: ["1d", "4h"]
-  ema_periods: [20, 50]
+  timeframes:
+    - "1d"
+    - "4h"
+
+  ema_periods:
+    - 20
+    - 50
+
   atr_period: 14
 
   high_low_lookback_days:
@@ -152,14 +164,17 @@ features:
 
   volume_sma_period: 7
   volume_spike_threshold: 1.5
+
   drawdown_lookback_days: 365
 ```
 
+Feature parameters affect scoring.
+
 ---
 
-### Scoring
+## 10. Scoring
 
-**Breakout**
+### 10.1 Breakout
 
 ```yaml
 scoring:
@@ -174,7 +189,9 @@ scoring:
       volatility_context: 0.20
 ```
 
-**Pullback**
+---
+
+### 10.2 Pullback
 
 ```yaml
   pullback:
@@ -188,7 +205,9 @@ scoring:
       rebound_signal: 0.20
 ```
 
-**Reversal**
+---
+
+### 10.3 Reversal
 
 ```yaml
   reversal:
@@ -208,7 +227,7 @@ scoring:
 
 ---
 
-### Backtest
+## 11. Backtest
 
 ```yaml
 backtest:
@@ -222,7 +241,7 @@ backtest:
 
 ---
 
-### Logging
+## 12. Logging
 
 ```yaml
 logging:
@@ -233,14 +252,14 @@ logging:
 
 ---
 
-## Versioning
+## 13. Versioning
 
-Configuration changes must bump:
+Configuration changes must increment:
 
 - `config_version`
 - `spec_version`
 
-Example:
+Format:
 
 ```yaml
 version:
@@ -250,29 +269,29 @@ version:
 
 ---
 
-## Anti-Goofs (Important)
+## 14. Anti-Goofs (Important)
 
-Config must not:
+Config must **not**:
 
 - contain fuzzy logic
 - depend on ML
 - rely on sentiment/news
+- mix setup type parameters
 - implicitly couple scoring modules
 - silently change behavior across runs
-- mix incompatible parameter domains
 
 ---
 
-## Extensibility (v1)
+## 15. Extensibility
 
-Config must allow adding:
+Config must support additions without breaking v1:
 
-- filters
-- penalties
-- scores
-- timeframes
-- data sources
+- new scores
+- new filters
+- new penalties
+- new timeframes
+- new data sources
 
-Backward compatibility is desirable but optional for v1.
+Backward compatibility is desirable but not required for v1.
 
 ---
