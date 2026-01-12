@@ -1,7 +1,7 @@
-# Pipeline & System Architecture  
+# Pipeline & System Architecture
 Version: v1.0  
 Language: English  
-Audience: Developer + GPT  
+Audience: Developer + GPT
 
 ---
 
@@ -43,17 +43,19 @@ Execution is initiated via:
 
 Full run (conceptual):
 
-1. Fetch Universe
-2. Market Cap Fetch
-3. Mapping + Confidence
-4. Filter Gate
-5. Cheap Pass (Ticker-based shortlist)
-6. OHLCV Fetch (for shortlist)
-7. Feature Computation
-8. Scoring (3 independent modules)
-9. Output (MD + JSON)
-10. Snapshot
-11. Optional Backtest
+```
+(1) Fetch Universe
+(2) Market Cap Fetch
+(3) Mapping + Confidence
+(4) Filter Gate
+(5) Cheap Pass (Ticker-based shortlist)
+(6) OHLCV Fetch (for shortlist)
+(7) Feature Computation
+(8) Scoring (3 independent modules)
+(9) Output (MD + JSON)
+(10) Snapshot
+(11) Optional Backtest
+```
 
 All steps must be **reproducible**, **idempotent** and **order-stable**.
 
@@ -337,42 +339,48 @@ Core architecture must not require rewrite to add extensions.
 
 ## 11. Summary Diagram (ASCII)
 
+```
       [MEXC Symbols]
              |
              v
-    [Tradeable USDT Universe]
+  [Tradeable USDT Universe]
              |
              v
-    [Market Cap Bulk Fetch]
+   [Market Cap Bulk Fetch]
              |
              v
-     [Mapping Layer]
+       [Mapping Layer]
              |
              v
-    [Filter Gate (hard)]
+     [Filter Gate (hard)]
              |
              v
-    [Cheap Pass (shortlist)]
+   [Cheap Pass (shortlist)]
              |
              v
-    [OHLCV Fetch (1d + 4h only)]
+[OHLCV Fetch (1d + 4h only)]
              |
              v
-    [Feature Computation]
+   [Feature Computation]
              |
              v
-    +-----------+------------+
-    |           |            |
-    v           v            v
-    [Breakout] [Pullback] [Reversal]
-    |           |            |
-    +-----------+------------+
-                |
-                v
+  +-----------+------------+
+  |           |            |
+  v           v            v
+[Breakout] [Pullback] [Reversal]
+     |         |         |
+     +-----------+--------+
+                 |
+                 v
           [Report + JSON]
-                |
-                v
-           [Snapshot]
-                |
-                v
-            [Backtest]
+                 |
+                 v
+              [Snapshot]
+                 |
+                 v
+              [Backtest]
+```
+
+---
+
+## End of `pipeline.md`
