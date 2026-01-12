@@ -295,3 +295,5 @@ Config must support additions without breaking v1:
 Backward compatibility is desirable but not required for v1.
 
 ---
+
+## End of `config.md`
