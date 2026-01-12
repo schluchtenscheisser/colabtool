@@ -164,3 +164,5 @@ und begründet, warum diese Struktur optimal ist für einen Stil wie:
 > „kurzfristig, opportunistisch, technisch, liquiditätsbewusst, asymmetrisch“  
 
 ---
+
+## Ende von `context.md`
