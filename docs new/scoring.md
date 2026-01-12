@@ -395,3 +395,5 @@ Future scores may include:
 v1 provides the structural foundation.
 
 ---
+
+## End of `scoring.md`
