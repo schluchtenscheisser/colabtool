@@ -1,7 +1,7 @@
-# Data Sources & Data Roles  
+# Data Sources & Data Roles
 Version: v1.0  
 Language: English  
-Audience: Developer + GPT  
+Audience: Developer + GPT
 
 ---
 
@@ -66,8 +66,10 @@ Minimum endpoints:
 ### 3.4 Query Strategy
 
 MEXC usage follows the principle:
-listings (cheap) → filter → shortlist → klines (expensive)
 
+```
+listings (cheap) → filter → shortlist → klines (expensive)
+```
 
 24h ticker data is cheap and bulk; OHLCV is per-symbol and expensive.
 
@@ -208,3 +210,5 @@ The architecture allows extension without breaking v1.
 - Snapshot-first backtesting
 
 ---
+
+## End of `data_sources.md`
