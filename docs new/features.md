@@ -1,7 +1,7 @@
-# Feature Engine Specification  
+# Feature Engine Specification
 Version: v1.0  
 Language: English  
-Audience: Developer + GPT  
+Audience: Developer + GPT
 
 ---
 
@@ -77,8 +77,10 @@ Missing candles must be either:
 ### 5.1 Returns
 
 Returns are computed windowed and normalized:
-r_n = close[t] / close[t-n] - 1
 
+```
+r_n = close[t] / close[t-n] - 1
+```
 
 v1 windows:
 - `r_1d`
@@ -95,8 +97,11 @@ Returns computed both on 1d and 4h basis (4h for near-term changes).
 ### 5.2 Highs & Lows
 
 Compute for `n ∈ {20, 30}`:
+
+```
 high_n = max(high[t-n .. t])
 low_n = min(low[t-n .. t])
+```
 
 Used for breakout logic + pullbacks + context.
 
@@ -105,8 +110,11 @@ Used for breakout logic + pullbacks + context.
 ### 5.3 ATH + Drawdown (Context)
 
 ATH computed over long window, e.g.:
+
+```
 ath_price = max(close[0 .. t])
 drawdown = close[t] / ath_price - 1
+```
 
 Used for reversal gating and base formation, not exclusion.
 
@@ -115,9 +123,11 @@ Used for reversal gating and base formation, not exclusion.
 ### 5.4 HH/HL Structure (Directional Structure)
 
 Directional structure on 1d:
+
+```
 higher_low = low[t] > low[t-k]
 higher_high = high[t] > high[t-k]
-
+```
 
 Used for trend + reversal confirmation.
 
@@ -138,8 +148,11 @@ Compute:
 On both 1d and 4h.
 
 Trend inference:
+
+```
 trend_up = close > ema50 and ema50 increasing
 trend_down = close < ema50 and ema50 decreasing
+```
 
 Trend is used for pullback/trend gating.
 
@@ -148,7 +161,10 @@ Trend is used for pullback/trend gating.
 ### 6.2 Slope
 
 Slope may be computed via log regression:
+
+```
 slope = slope_of(log(close))
+```
 
 Used indirectly; not mandatory for v1 scoring.
 
@@ -157,8 +173,11 @@ Used indirectly; not mandatory for v1 scoring.
 ## 7. Volatility Features
 
 Volatility measured via ATR:
+
+```
 atr = ATR(14)
 atr_pct = atr / close
+```
 
 Used for:
 - breakout context
@@ -176,7 +195,10 @@ Volume features include:
 - raw volume
 - volume SMA (7, 14 days)
 - volume spike factor:
+
+```
 vol_spike = volume_today / volume_sma7
+```
 
 Volume assists:
 
@@ -199,7 +221,10 @@ Pullback requires:
 3. rebound attempt
 
 Retracement measured:
+
+```
 pullback_pct = (recent_high - close) / recent_high
+```
 
 Rebound detected via HH/HL + volume + EMA recapture.
 
@@ -230,13 +255,22 @@ Reversal is stricter than “oscillator oversold” signals.
 Breakout decomposed into:
 
 1. **High Break**
+
+```
 close > high_20 or close > high_30
+```
 
 2. **Volume Confirmation**
+
+```
 vol_spike ≥ threshold
+```
 
 3. **Overextension Check**
+
+```
 close / ema20 within limit
+```
 
 Breakout does not require drawdown context.
 
@@ -275,11 +309,17 @@ Flags affect scoring and reporting.
 Features must be stored per-asset per-day in JSON:
 
 Recommended:
+
+```
 features[timeframe][feature_name]
+```
 
 Example:
+
+```
 features["1d"]["ema20"]
 features["4h"]["r_4h"]
+```
 
 ---
 
@@ -319,3 +359,4 @@ It does not pull data from scoring.
 
 ---
 
+## End of `features.md`
