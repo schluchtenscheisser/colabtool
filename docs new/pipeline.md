@@ -42,18 +42,18 @@ Execution is initiated via:
 ## 3. Core Pipeline (Daily Run)
 
 Full run (conceptual):
-(1) Fetch Universe
-(2) Market Cap Fetch
-(3) Mapping + Confidence
-(4) Filter Gate
-(5) Cheap Pass (Ticker-based shortlist)
-(6) OHLCV Fetch (for shortlist)
-(7) Feature Computation
-(8) Scoring (3 independent modules)
-(9) Output (MD + JSON)
-(10) Snapshot
-(11) Optional Backtest
 
+1. Fetch Universe
+2. Market Cap Fetch
+3. Mapping + Confidence
+4. Filter Gate
+5. Cheap Pass (Ticker-based shortlist)
+6. OHLCV Fetch (for shortlist)
+7. Feature Computation
+8. Scoring (3 independent modules)
+9. Output (MD + JSON)
+10. Snapshot
+11. Optional Backtest
 
 All steps must be **reproducible**, **idempotent** and **order-stable**.
 
