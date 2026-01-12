@@ -1,7 +1,7 @@
-# Scoring Modules Specification  
+# Scoring Modules Specification
 Version: v1.0  
 Language: English  
-Audience: Developer + GPT  
+Audience: Developer + GPT
 
 ---
 
@@ -67,20 +67,26 @@ Penalties reduce normalized score based on flags:
 Penalties must be multiplicative, not subtractive.
 
 Example:
+
+```
 S_final = S_raw * P_low_liquidity * P_late_stage * ...
+```
 
 ### 2.6 Output Structure
 
 Each score returns:
+
+```json
 {
-score: float (0–100),
-normalized: float (0–1),
-rank: int,
-components: { ... },
-penalties: { ... },
-flags: { ... },
-metadata: { ... }
+  "score": float (0–100),
+  "normalized": float (0–1),
+  "rank": int,
+  "components": { ... },
+  "penalties": { ... },
+  "flags": { ... },
+  "metadata": { ... }
 }
+```
 
 ---
 
@@ -110,16 +116,25 @@ From features:
 ### 3.3 Gates
 
 Breakout gates:
+
+```
 close > high_20d or close > high_30d
+```
 
 Volume gate:
+
+```
 volume_spike_7d ≥ threshold (config, e.g. 1.5)
+```
 
 ### 3.4 Overextension Check
 
 To avoid late-stage moves:
+
+```
 oe_ema20 = close / ema20 - 1
-overextended = oe_ema20 > limit (config, e.g. 25%
+overextended = oe_ema20 > limit (config, e.g. 25%)
+```
 
 Late-stage moves produce penalty, not exclusion.
 
@@ -134,14 +149,20 @@ Example weights:
 | volatility_context | 0.20 |
 
 Normalized subcomponents:
+
+```
 s_price = clip((close - high_20d) / (0.05*high_20d), 0, 1)
 s_volume = clip((vol_spike - 1.0) / (min_spike - 1.0), 0, 1)
 s_vol_ctx = clip(atr_limit / atr_pct, 0, 1)
+```
 
 ### 3.6 Penalties
+
+```
 if extreme_volatility → penalty
 if low_liquidity → penalty
 if late_stage_move → penalty
+```
 
 ### 3.7 Interpretation
 
@@ -169,18 +190,27 @@ Trend must be established before retracement.
 ### 4.3 Trend Gate
 
 Trend is up if:
+
+```
 close > ema50 (1d)
 ema50 rising or flat
+```
 
 ### 4.4 Pullback Detection
 
 Compute:
+
+```
 recent_high = max(high over 20–30d)
 pullback_pct = (recent_high - close) / recent_high
+```
 
 Configurable limits:
+
+```
 min_pullback_pct
 max_pullback_pct (e.g. 25%)
+```
 
 ### 4.5 Rebound Detection
 
@@ -206,9 +236,12 @@ Example weights:
 | rebound_signal | 0.20 |
 
 Component logic:
+
+```
 s_trend = f(close>ema50, ema50_slope, HH/HL_count)
 s_pullback = f(pullback_pct range)
 s_rebound = f(ema_reclaim + r_3d + vol_spike)
+```
 
 ### 4.7 Penalties
 
@@ -244,19 +277,31 @@ This setup captures structural transitions from bear to bull state.
 Reversal gates:
 
 **Gate 1: Drawdown**
+
+```
 min_dd ≤ drawdown ≤ max_dd
 e.g. -40% ≤ dd ≤ -90%
+```
 
 **Gate 2: Base**
+
+```
 base_low = min(low over base_lookback)
 no new lows for ≥ K days
+```
 
 **Gate 3: Reclaim**
+
+```
 close > ema20 (min 1 day)
 optional: close > ema50
+```
 
 Volume Gate:
+
+```
 vol_spike ≥ threshold (e.g. 1.5)
+```
 
 ### 5.4 Components
 
@@ -269,9 +314,12 @@ Example weights:
 | volume_confirmation | 0.30 |
 
 Normalized subcomponents:
+
+```
 s_base = g(days_without_new_low)
 s_reclaim = g(close/ema20, close/ema50, r_3d)
 s_vol = g(vol_spike)
+```
 
 ### 5.5 Penalties
 
@@ -347,6 +395,3 @@ Future scores may include:
 v1 provides the structural foundation.
 
 ---
-
-
-
