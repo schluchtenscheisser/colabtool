@@ -1,6 +1,6 @@
 # 📘 CODE_MAP.md – Automatisch generiert
 > Repository: schluchtenscheisser/colabtool  
-> Letzte Aktualisierung: 2026-01-13 08:33 UTC
+> Letzte Aktualisierung: 2026-01-17 08:53 UTC
 
 ---
 
