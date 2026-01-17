@@ -1,61 +1,61 @@
-name: Daily Snapshot
+# name: Daily Snapshot
 
-on:
-  schedule:
-    - cron: '0 5 * * *'  # täglich um 05:00 UTC
-  workflow_dispatch:  # manuelles Auslösen
+# on:
+#   schedule:
+#     - cron: '0 5 * * *'  # täglich um 05:00 UTC
+#   workflow_dispatch:  # manuelles Auslösen
 
-jobs:
-  snapshot:
-    runs-on: ubuntu-latest
+# jobs:
+#   snapshot:
+#     runs-on: ubuntu-latest
     
-    env:
-      ENABLE_PIT_CATEGORIES: "1"
-      ENABLE_PIT_MEXC: "1"
-      ENABLE_PIT_ALIAS: "1"
+#     env:
+#       ENABLE_PIT_CATEGORIES: "1"
+#       ENABLE_PIT_MEXC: "1"
+#       ENABLE_PIT_ALIAS: "1"
     
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+#     steps:
+#       - name: Checkout repo
+#         uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
+#       - name: Set up Python
+#         uses: actions/setup-python@v4
+#         with:
+#           python-version: '3.11'
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e .
+#       - name: Install dependencies
+#         run: |
+#           python -m pip install --upgrade pip
+#           pip install -e .
 
-      - name: Run full snapshot mode (with scoring & backtest)
-        run: python -m colabtool.run_snapshot_mode
+#       - name: Run full snapshot mode (with scoring & backtest)
+#         run: python -m colabtool.run_snapshot_mode
 
-      - name: Commit snapshots (robust)
-        run: |
-          set -e
-          git config --global user.name 'github-actions'
-          git config --global user.email 'actions@github.com'
-          git add snapshots/* || true
-          git commit -m "[auto] Daily snapshot $(date -I)" || echo "No changes to commit"
+#       - name: Commit snapshots (robust)
+#         run: |
+#           set -e
+#           git config --global user.name 'github-actions'
+#           git config --global user.email 'actions@github.com'
+#           git add snapshots/* || true
+#           git commit -m "[auto] Daily snapshot $(date -I)" || echo "No changes to commit"
 
-          max_attempts=3
-          attempt=1
-          until git push; do
-            if [ $attempt -ge $max_attempts ]; then
-              echo "❌ Git push failed after $attempt attempts"
-              exit 1
-            fi
-            echo "⚠️ Push failed (attempt $attempt/$max_attempts), retrying in $((attempt * 10))s..."
-            sleep $((attempt * 10))
-            attempt=$((attempt + 1))
-          done
+#           max_attempts=3
+#           attempt=1
+#           until git push; do
+#             if [ $attempt -ge $max_attempts ]; then
+#               echo "❌ Git push failed after $attempt attempts"
+#               exit 1
+#             fi
+#             echo "⚠️ Push failed (attempt $attempt/$max_attempts), retrying in $((attempt * 10))s..."
+#             sleep $((attempt * 10))
+#             attempt=$((attempt + 1))
+#           done
 
-      - name: Upload snapshots as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: daily-snapshot
-          path: snapshots/
+#       - name: Upload snapshots as artifact
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: daily-snapshot
+#           path: snapshots/
           
       # ============================================================
       # ☁️ (DEAKTIVIERT) Upload Snapshot Excel-Dateien nach Google Drive (Service Account)
